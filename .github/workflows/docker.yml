@@ -4,6 +4,15 @@ on:
   push:
     branches: [master]
     tags: ["v*"]
+    # Only files that end up in the image. (Tag pushes always build.)
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - static/**
+      - internal/db/migrations/**
+      - Dockerfile
+      - .github/workflows/docker.yml
   workflow_dispatch:
 
 concurrency:
