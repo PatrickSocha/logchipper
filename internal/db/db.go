@@ -95,7 +95,7 @@ func (d *DB) migrate() error {
 func (d *DB) Insert(e Event) (int64, error) {
 	res, err := d.conn.Exec(
 		`INSERT INTO events (created_at, source, level, message, meta) VALUES (?, ?, ?, ?, ?)`,
-		e.CreatedAt, e.Source, e.Level, e.Message, e.Meta,
+		e.CreatedAt.UTC(), e.Source, e.Level, e.Message, e.Meta,
 	)
 	if err != nil {
 		return 0, err
@@ -103,14 +103,19 @@ func (d *DB) Insert(e Event) (int64, error) {
 	return res.LastInsertId()
 }
 
+// created_at is stored as text and compared as a string, so every time
+// written or compared must be in the same zone: UTC.
+
 type QueryParams struct {
 	Source   string
 	Level    string
 	Search   string
 	Since    time.Time
+	Until    time.Time // exclusive
 	Limit    int
 	AfterID  int64
 	BeforeID int64
+	Asc      bool // oldest first; used to page forward from AfterID or Since
 }
 
 func (d *DB) Query(p QueryParams) ([]Event, error) {
@@ -132,7 +137,11 @@ func (d *DB) Query(p QueryParams) ([]Event, error) {
 	}
 	if !p.Since.IsZero() {
 		q += ` AND created_at >= ?`
-		args = append(args, p.Since)
+		args = append(args, p.Since.UTC())
+	}
+	if !p.Until.IsZero() {
+		q += ` AND created_at < ?`
+		args = append(args, p.Until.UTC())
 	}
 	if p.AfterID > 0 {
 		q += ` AND id > ?`
@@ -144,7 +153,11 @@ func (d *DB) Query(p QueryParams) ([]Event, error) {
 		args = append(args, p.BeforeID)
 	}
 
-	q += ` ORDER BY id DESC`
+	if p.Asc {
+		q += ` ORDER BY id ASC`
+	} else {
+		q += ` ORDER BY id DESC`
+	}
 	if p.Limit > 0 {
 		q += fmt.Sprintf(` LIMIT %d`, p.Limit)
 	}
@@ -185,7 +198,7 @@ type HistogramParams struct {
 func (d *DB) Histogram(p HistogramParams) ([]Bucket, error) {
 	q := `SELECT (CAST(strftime('%s', created_at) AS INTEGER) / ?) * ? AS bucket, COUNT(*) AS cnt
 	      FROM events WHERE created_at >= ?`
-	args := []any{p.BucketSeconds, p.BucketSeconds, p.Since}
+	args := []any{p.BucketSeconds, p.BucketSeconds, p.Since.UTC()}
 
 	if p.Source != "" {
 		q += ` AND source = ?`
@@ -236,7 +249,7 @@ func (d *DB) Sources() ([]string, error) {
 
 func (d *DB) Purge(olderThan time.Duration) (int64, error) {
 	cutoff := time.Now().Add(-olderThan)
-	res, err := d.conn.Exec(`DELETE FROM events WHERE created_at < ?`, cutoff)
+	res, err := d.conn.Exec(`DELETE FROM events WHERE created_at < ?`, cutoff.UTC())
 	if err != nil {
 		return 0, err
 	}

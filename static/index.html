@@ -13,41 +13,46 @@
 <meta name="theme-color" content="#0a0c0f">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
 
   :root {
-    --bg:        #0a0c0f;
-    --surface:   #0f1215;
-    --border:    #1e2530;
-    --border2:   #2a3545;
-    --text:      #c8d4e0;
-    --muted:     #4a5568;
-    --accent:    #1b7a43;
-    --accent2:   #145c33;
-    --info:      #00d4ff;
-    --warn:      #f59e0b;
-    --error:     #ef4444;
-    --debug:     #a78bfa;
-    --notice:    #34d399;
+    --bg:       #0a0c0f;
+    --surface:  #0f1215;
+    --border:   #1e2530;
+    --border2:  #2a3545;
+    --text:     #c8d4e0;
+    --muted:    #5b6b80;
+    --accent:   #1b7a43;
+    --accent2:  #145c33;
+    --green:    #2ecc71;
+    --info:     #00d4ff;
+    --warn:     #f59e0b;
+    --error:    #ef4444;
+    --debug:    #a78bfa;
+    --notice:   #34d399;
+    --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
   html, body {
     height: 100%;
     background: var(--bg);
     color: var(--text);
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    font-family: var(--mono);
     font-size: 13px;
     overflow: hidden;
   }
 
+  button, input, select { font-family: inherit; }
+
   #app {
-    position: relative;
-    z-index: 1;
     display: grid;
-    grid-template-rows: 48px 1fr auto 52px 32px;
+    grid-template-rows: 48px 1fr auto 52px 40px;
     height: 100vh;
   }
 
-  /* HEADER */
+  /* ── Header ─────────────────────────────────────────────────────────────── */
+
   header {
     display: flex;
     align-items: center;
@@ -55,37 +60,29 @@
     padding: 0 20px;
     border-bottom: 1px solid var(--border);
     background: rgba(10,12,15,0.95);
-    backdrop-filter: blur(8px);
   }
 
   .logo {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--sans);
     font-weight: 800;
     font-size: 18px;
     letter-spacing: -0.5px;
     color: #fff;
   }
-  .logo-icon { flex: none; border-radius: 50%; }
-  .logo span {
-    color: var(--accent);
-  }
+  .logo svg { flex: none; border-radius: 50%; }
+  .logo span span { color: var(--accent); }
 
-  .header-divider {
-    width: 1px;
-    height: 20px;
-    background: var(--border2);
-  }
+  .header-divider { width: 1px; height: 20px; background: var(--border2); }
 
-  .status-pill {
+  .status {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--muted);
-    letter-spacing: 0.05em;
   }
   .status-dot {
     width: 7px;
@@ -99,10 +96,9 @@
     box-shadow: 0 0 6px var(--notice);
     animation: pulse 2s infinite;
   }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
+  .status-dot.error { background: var(--error); }
+  .status-dot.history { background: var(--warn); }
+  @keyframes pulse { 50% { opacity: 0.5; } }
 
   .header-right {
     margin-left: auto;
@@ -118,28 +114,57 @@
     border: 1px solid var(--border);
     border-radius: 3px;
   }
-  .stat-chip strong {
-    color: var(--text);
-    font-weight: 500;
-  }
+  .stat-chip strong { color: var(--text); font-weight: 500; }
 
-  /* TOOLBAR */
-  .toolbar {
+  /* ── Form controls ──────────────────────────────────────────────────────── */
+
+  input[type="text"], input[type="password"], select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--accent2); }
+
+  select {
+    min-width: 110px;
+    padding-right: 24px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235b6b80'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  select option { background: var(--surface); }
+
+  .btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    height: 32px;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s;
   }
+  .btn:hover { border-color: var(--border2); color: #fff; }
+  .btn.active { border-color: var(--green); color: var(--green); }
 
   .search-wrap {
     position: relative;
     flex: 1;
-    max-width: 400px;
+    max-width: 420px;
   }
-  .search-wrap svg {
+  .search-wrap > svg {
     position: absolute;
     left: 10px;
     top: 50%;
@@ -147,19 +172,10 @@
     color: var(--muted);
     pointer-events: none;
   }
-  input[type="text"], select {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-    font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 3px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  input[type="text"]:focus, select:focus {
-    border-color: var(--accent2);
+  .search-wrap input {
+    width: 100%;
+    padding-left: 32px;
+    padding-right: 26px;
   }
   .search-clear {
     position: absolute;
@@ -177,95 +193,31 @@
     font-size: 15px;
     line-height: 1;
     cursor: pointer;
-    border-radius: 3px;
   }
   .search-clear:hover { color: #fff; }
   .search-wrap.has-value .search-clear { display: flex; }
 
-  .search-wrap input {
-    width: 100%;
-    padding-left: 32px;
-    padding-right: 26px;
-  }
-  select {
-    padding: 6px 8px;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    min-width: 100px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a5568'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    padding-right: 24px;
-  }
-  select option { background: #0f1215; }
+  /* ── Log table ──────────────────────────────────────────────────────────── */
 
-  .btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-    font-size: 11px;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    letter-spacing: 0.04em;
-    transition: border-color 0.15s, color 0.15s;
-    white-space: nowrap;
-  }
-  .btn:hover { border-color: var(--border2); color: #fff; }
-  .btn.active { border-color: #2ecc71; color: #2ecc71; }
-  .btn.danger { border-color: var(--error); color: var(--error); }
-
-  #connOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10,12,15,0.85);
-    z-index: 900;
-    display: none;
-    align-items: center;
-    justify-content: center;
-  }
-  #connOverlay.show { display: flex; }
-  .conn-modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    width: 100%;
-    max-width: 560px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  }
-  .conn-modal h2 { font-size: 14px; color: #fff; margin-bottom: 16px; }
-  .conn-row { margin-bottom: 14px; }
-  .conn-row label { display: block; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); opacity: 0.6; margin-bottom: 4px; }
-  .conn-row .conn-line { display: flex; gap: 8px; align-items: stretch; }
-  .conn-row code {
-    flex: 1;
-    min-width: 0;
-    background: var(--bg, #0a0c0f);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 6px 8px;
-    font-size: 11px;
-    overflow-x: auto;
-    white-space: pre;
-    user-select: all;
-  }
-  .conn-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
-
-  .toolbar-sep { width: 1px; height: 20px; background: var(--border); }
-
-  /* LOG TABLE */
   .log-area {
-    overflow: hidden;
+    position: relative;
     display: flex;
     flex-direction: column;
-    position: relative;
+    overflow: hidden;
   }
+
+  .history-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 20px;
+    font-size: 12px;
+    color: var(--warn);
+    background: rgba(245,158,11,0.08);
+    border-bottom: 1px solid rgba(245,158,11,0.25);
+  }
+  .history-bar .btn { margin-left: auto; }
 
   .log-table-wrap {
     flex: 1;
@@ -276,119 +228,25 @@
   .log-table-wrap::-webkit-scrollbar-track { background: var(--bg); }
   .log-table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-  /* GRAPH */
-  .graph-panel {
-    flex: none;
-    height: 130px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .graph-panel:not([hidden]) {
-    display: flex;
-    flex-direction: column;
-  }
-  .graph-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 14px;
-    flex: none;
-  }
-  .graph-title {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  #graphRange { min-width: 0; }
-  .graph-chart-wrap {
-    position: relative;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .graph-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    overflow: visible;
-  }
-  .graph-grid line {
-    stroke: var(--border);
-    stroke-width: 1;
-  }
-  .graph-axis-label {
-    fill: var(--muted);
-    font-size: 9px;
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-  }
-  .graph-area { fill: url(#graphFill); }
-  .graph-line {
-    fill: none;
-    stroke: #00d4ff;
-    stroke-width: 2;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-  }
-  .graph-crosshair {
-    stroke: var(--border2);
-    stroke-width: 1;
-    pointer-events: none;
-    display: none;
-  }
-  .graph-hit {
-    fill: transparent;
-    cursor: crosshair;
-  }
-  .graph-tooltip {
-    position: absolute;
-    top: 4px;
-    padding: 4px 8px;
-    background: var(--bg);
-    border: 1px solid var(--border2);
-    border-radius: 3px;
-    font-size: 11px;
-    color: var(--text);
-    white-space: nowrap;
-    pointer-events: none;
-    transform: translateX(-50%);
-  }
-  .graph-tooltip .t { color: var(--muted); margin-right: 6px; }
-  .graph-empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--muted);
-    font-size: 11px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto;
-  }
+  table { width: 100%; border-collapse: collapse; }
 
   thead th {
     position: sticky;
     top: 0;
+    z-index: 2;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 8px 12px;
     text-align: left;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
+    font-size: 11px;
     font-weight: 500;
-    z-index: 2;
+    color: var(--muted);
     user-select: none;
   }
 
-  col.col-time    { width: 160px; }
-  col.col-level   { width: 70px; }
-  col.col-source  { width: 110px; }
-  col.col-message { width: auto; }
+  col.col-time    { width: 150px; }
+  col.col-level   { width: 80px; }
+  col.col-source  { width: 120px; }
 
   tbody tr {
     border-bottom: 1px solid rgba(30,37,48,0.5);
@@ -396,19 +254,26 @@
   }
   tbody tr:hover { background: rgba(255,255,255,0.025); }
   tbody tr:has(.empty-state) { border-bottom: none; background: none; }
-  tbody tr.new-row {
-    animation: slideIn 0.2s ease forwards;
-  }
+  tbody tr.new-row { animation: slideIn 0.2s ease forwards; }
   @keyframes slideIn {
     from { opacity: 0; background: rgba(0,212,255,0.06); }
     to   { opacity: 1; background: transparent; }
+  }
+  /* The first row at the time picked on the graph. */
+  tbody tr.jump-target {
+    box-shadow: inset 3px 0 0 var(--warn);
+    animation: jumpFlash 2.5s ease;
+  }
+  @keyframes jumpFlash {
+    from { background: rgba(245,158,11,0.2); }
+    to   { background: transparent; }
   }
 
   td {
     padding: 3px 12px;
     vertical-align: top;
     font-size: 12px;
-    line-height: 1.3;
+    line-height: 1.4;
   }
 
   .td-time {
@@ -416,21 +281,22 @@
     font-size: 11px;
     white-space: nowrap;
   }
+  .td-time .ms { opacity: 0.55; }
 
   .level-badge {
     display: inline-block;
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     padding: 1px 5px;
     border-radius: 2px;
     text-transform: uppercase;
   }
-  .lvl-info    { color: #2ecc71; background: rgba(46,204,113,0.12);  border: 1px solid rgba(46,204,113,0.3); }
-  .lvl-warn    { color: var(--warn);   background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
-  .lvl-error   { color: var(--error);  background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2); }
-  .lvl-debug   { color: var(--debug);  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); }
-  .lvl-notice  { color: var(--notice); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); }
+  .lvl-info   { color: var(--green);  background: rgba(46,204,113,0.12);  border: 1px solid rgba(46,204,113,0.3); }
+  .lvl-warn   { color: var(--warn);   background: rgba(245,158,11,0.08);  border: 1px solid rgba(245,158,11,0.2); }
+  .lvl-error  { color: var(--error);  background: rgba(239,68,68,0.08);   border: 1px solid rgba(239,68,68,0.2); }
+  .lvl-debug  { color: var(--debug);  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); }
+  .lvl-notice { color: var(--notice); background: rgba(52,211,153,0.08);  border: 1px solid rgba(52,211,153,0.2); }
 
   .td-source {
     color: var(--muted);
@@ -439,226 +305,225 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .td-source span {
-    cursor: pointer;
-    transition: color 0.1s;
-  }
-  .td-source span:hover { color: var(--accent); }
+  .source-link { cursor: pointer; transition: color 0.1s; }
+  .source-link:hover { color: var(--green); }
 
-  .td-message {
-    word-break: break-all;
-    color: var(--text);
-  }
+  .td-message { word-break: break-all; }
   .td-message .meta {
     display: block;
+    margin-top: 2px;
     font-size: 10px;
     color: var(--muted);
-    margin-top: 2px;
   }
 
   .empty-state {
     text-align: center;
     padding: 80px 20px;
     color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 0.05em;
+    font-size: 13px;
   }
   .empty-state .big { font-size: 32px; opacity: 0.3; margin-bottom: 12px; }
 
-  /* FOOTER */
-  footer {
+  #scrollBtn {
+    position: absolute;
+    bottom: 16px;
+    right: 24px;
+    z-index: 10;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+
+  /* ── Graph ──────────────────────────────────────────────────────────────── */
+
+  .graph-panel {
+    display: flex;
+    flex-direction: column;
+    height: 140px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .graph-toolbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px;
+  }
+  .graph-title { font-size: 12px; color: var(--text); }
+  .graph-hint { font-size: 11px; color: var(--muted); }
+  #graphRange { margin-left: auto; min-width: 0; }
+
+  .graph-chart-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .graph-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .graph-grid line { stroke: var(--border); stroke-width: 1; }
+  .graph-axis-label { fill: var(--muted); font-size: 9px; font-family: var(--mono); }
+  .graph-area { fill: url(#graphFill); }
+  .graph-line {
+    fill: none;
+    stroke: var(--info);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .graph-crosshair { stroke: var(--border2); stroke-width: 1; pointer-events: none; }
+  .graph-marker { stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 3 3; pointer-events: none; }
+  .graph-hit { fill: transparent; cursor: pointer; }
+  .graph-tooltip {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .graph-tooltip .t { color: var(--muted); margin-right: 6px; }
+
+  /* ── Footer & toolbar ───────────────────────────────────────────────────── */
+
+  footer, .toolbar {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 0 20px;
     border-top: 1px solid var(--border);
     background: var(--surface);
-    font-size: 11px;
-    color: var(--muted);
   }
+  footer { font-size: 11px; color: var(--muted); }
   footer .right { margin-left: auto; }
-  footer .search-wrap { flex: 1; max-width: 400px; }
+  .toolbar-sep { width: 1px; height: 20px; background: var(--border); }
 
-  /* SCROLL-TO-BOTTOM FAB */
-  #scrollBtn {
-    position: absolute;
-    bottom: 40px;
-    right: 24px;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 3px;
-    padding: 6px 12px;
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    display: none;
-    z-index: 10;
-    letter-spacing: 0.05em;
-    box-shadow: 0 4px 16px rgba(0,212,255,0.3);
-  }
+  /* ── Overlays (login, connection help) ──────────────────────────────────── */
 
-  /* NOTIFICATION TOAST */
-  #toast {
-    position: fixed;
-    bottom: 48px;
-    left: 50%;
-    transform: translateX(-50%) translateY(10px);
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
-    pointer-events: none;
-    z-index: 100;
-  }
-  #toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  /* LOGIN OVERLAY */
-  #loginOverlay {
+  .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(10,12,15,0.95);
-    backdrop-filter: blur(8px);
-    z-index: 1000;
-    display: none;
+    z-index: 900;
+    display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(10,12,15,0.9);
+    backdrop-filter: blur(6px);
   }
-  #loginOverlay.show {
-    display: flex;
-  }
+  #loginOverlay { z-index: 1000; }
 
-  .login-modal {
+  .modal {
+    width: 100%;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 32px;
-    width: 100%;
-    max-width: 400px;
+    padding: 28px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   }
-
-  .login-modal h1 {
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    font-size: 24px;
-    margin-bottom: 24px;
-    color: #fff;
-  }
-
-  .login-modal .form-group {
-    margin-bottom: 16px;
-  }
-
-  .login-modal label {
+  .modal label {
     display: block;
+    margin-bottom: 6px;
     font-size: 12px;
     color: var(--muted);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
-  .login-modal input[type="text"],
-  .login-modal input[type="password"] {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-    font-size: 12px;
-    padding: 8px 12px;
-    border-radius: 3px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .login-modal input[type="text"]:focus,
-  .login-modal input[type="password"]:focus {
-    border-color: var(--accent2);
-  }
-
-  .login-modal .error {
-    color: var(--error);
-    font-size: 12px;
-    margin-top: 12px;
-    display: none;
-  }
-  .login-modal .error.show {
-    display: block;
-  }
-
+  .login-modal { max-width: 400px; }
+  .login-modal h1 { font-size: 24px; margin-bottom: 20px; }
+  .login-modal .intro { margin-bottom: 16px; color: var(--muted); font-size: 13px; }
+  .login-modal .form-group { margin-bottom: 16px; }
+  .login-modal input { width: 100%; padding: 8px 12px; }
+  .login-modal .error { margin-top: 12px; color: var(--error); font-size: 12px; }
   .login-modal .btn-submit {
     width: 100%;
+    margin-top: 8px;
+    padding: 9px;
     background: var(--accent);
-    color: #000;
+    color: #fff;
     border: none;
     border-radius: 3px;
-    padding: 8px;
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    margin-top: 16px;
     transition: background 0.2s;
   }
-  .login-modal .btn-submit:hover {
-    background: #00e5ff;
-  }
+  .login-modal .btn-submit:hover { background: var(--green); }
 
-  #logoutBtn {
-    display: none;
+  .conn-modal { max-width: 560px; }
+  .conn-modal h2 { font-family: var(--sans); font-size: 16px; color: #fff; margin-bottom: 6px; }
+  .conn-modal .intro { color: var(--muted); font-size: 12px; margin-bottom: 18px; }
+  .conn-row { margin-bottom: 14px; }
+  .conn-line { display: flex; gap: 8px; align-items: stretch; }
+  .conn-line code {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 11px;
+    white-space: pre;
+    overflow-x: auto;
+    user-select: all;
   }
+  .conn-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 
-  /* ── MOBILE ───────────────────────────────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 56px;
+    left: 50%;
+    z-index: 100;
+    transform: translateX(-50%) translateY(10px);
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Mobile ─────────────────────────────────────────────────────────────── */
+
   @media (max-width: 700px) {
-    /* iOS Safari auto-zooms on focus for any field under 16px */
-    input[type="text"], input[type="password"], select {
-      font-size: 16px;
-    }
+    /* iOS Safari zooms in on focus for any field under 16px. */
+    input[type="text"], input[type="password"], select { font-size: 16px; }
 
-    /* toolbar/footer rows now wrap to multiple lines, so their grid row
-       tracks need to grow with them instead of staying pinned at the
-       desktop fixed heights — otherwise wrapped content overflows past
-       the viewport and gets clipped (worse in standalone/home-screen
-       mode, which also needs room for the home-indicator safe area). */
+    /* Footer and toolbar wrap onto several lines here, so their rows must
+       grow with them; also leave room for the notch and home indicator. */
     #app {
       height: 100dvh;
       grid-template-rows: calc(48px + env(safe-area-inset-top)) 1fr auto auto auto;
     }
-
-    header {
-      padding-top: env(safe-area-inset-top);
-    }
+    header { padding-top: env(safe-area-inset-top); }
 
     .toolbar {
       flex-wrap: wrap;
-      height: auto;
-      padding: 8px 12px;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
     }
-    .toolbar-sep { display: none; }
+    .toolbar-sep, #connBtn, #clearBtn { display: none; }
     select { flex: 1 1 45%; min-width: 0; }
-    #connBtn, #clearBtn { display: none; }
-    .graph-panel { height: 110px; }
 
-    /* Only the search box is useful at this width — status text and the
-       clock are redundant with what's already on screen. */
-    footer {
-      height: auto;
-      padding: 8px 12px;
-    }
+    .graph-panel { height: 120px; }
+    .graph-hint { display: none; }
+    .history-bar { padding: 6px 12px; }
+
+    footer { padding: 8px 12px; }
     footer .search-wrap { max-width: none; }
-    footer #footerStatus, footer .right { display: none; }
+    #footerStatus, footer .right { display: none; }
 
-    /* Log rows become stacked cards instead of a fixed-column table */
+    /* Log rows become stacked cards instead of fixed columns. */
     table, thead, tbody, tr, td { display: block; }
     thead { display: none; }
     col { width: auto !important; }
@@ -670,12 +535,7 @@
       padding: 8px 12px;
     }
     td { padding: 0; }
-    .td-time, .td-source { flex: 0 0 auto; }
-    .td-source {
-      overflow: visible;
-      text-overflow: clip;
-      white-space: normal;
-    }
+    .td-source { overflow: visible; white-space: normal; }
     .td-message { flex: 1 1 100%; margin-top: 2px; }
     .empty-state { flex: 1 1 100%; }
   }
@@ -683,81 +543,80 @@
   @media (max-width: 480px) {
     header { padding: 0 12px; gap: 10px; }
     .logo { font-size: 16px; }
-    .status-pill span { display: none; }
-    .stat-chip { display: none; }
+    .status span, .stat-chip { display: none; }
     .header-right { gap: 8px; }
-
-    #connOverlay, #loginOverlay { padding: 16px; }
-    .conn-modal, .login-modal { padding: 20px; }
+    .overlay { padding: 16px; }
+    .modal { padding: 20px; }
   }
 </style>
 </head>
 <body>
+
+<!-- Logo artwork, drawn once and reused below with <use>. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logoMark" viewBox="0 0 200 200">
+    <circle cx="100" cy="100" r="90" fill="#2e1f15"/>
+    <circle cx="100" cy="100" r="78" fill="#b98a54"/>
+    <circle cx="100" cy="100" r="78" fill="none" stroke="#8f6a3e" stroke-width="6"/>
+    <circle cx="100" cy="100" r="52" fill="none" stroke="#6e4b28" stroke-width="6"/>
+    <circle cx="100" cy="100" r="26" fill="none" stroke="#8f6a3e" stroke-width="5"/>
+    <circle cx="100" cy="100" r="6" fill="#2ecc71"/>
+  </symbol>
+</svg>
+
 <div id="app">
   <header>
     <div class="logo">
-      <svg class="logo-icon" width="20" height="20" viewBox="0 0 200 200" aria-hidden="true">
-        <circle cx="100" cy="100" r="90" fill="#2e1f15"/>
-        <circle cx="100" cy="100" r="78" fill="#b98a54"/>
-        <circle cx="100" cy="100" r="78" fill="none" stroke="#8f6a3e" stroke-width="6"/>
-        <circle cx="100" cy="100" r="52" fill="none" stroke="#6e4b28" stroke-width="6"/>
-        <circle cx="100" cy="100" r="26" fill="none" stroke="#8f6a3e" stroke-width="5"/>
-        <circle cx="100" cy="100" r="6" fill="#2ecc71"/>
-      </svg>
-      Log<span>Chipper</span>
+      <svg width="20" height="20" aria-hidden="true"><use href="#logoMark"/></svg>
+      <span>Log<span>Chipper</span></span>
     </div>
     <div class="header-divider"></div>
-    <div class="status-pill">
+    <div class="status">
       <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">connecting</span>
+      <span id="statusText">Connecting…</span>
     </div>
     <div class="header-right">
-      <div class="stat-chip">events: <strong id="totalCount">0</strong></div>
-      <div class="stat-chip">visible: <strong id="visibleCount">0</strong></div>
-      <button class="btn" id="logoutBtn">logout</button>
+      <div class="stat-chip" title="Events stored in the database"><strong id="totalCount">0</strong> stored</div>
+      <div class="stat-chip" title="Events currently shown below"><strong id="visibleCount">0</strong> shown</div>
+      <button class="btn" id="logoutBtn" hidden>Log out</button>
     </div>
   </header>
 
   <div class="log-area">
+    <div class="history-bar" id="historyBar" hidden>
+      <span id="historyText"></span>
+      <button class="btn" id="backToLiveBtn">Back to live</button>
+    </div>
     <div class="log-table-wrap" id="logWrap">
       <table>
         <colgroup>
           <col class="col-time">
           <col class="col-level">
           <col class="col-source">
-          <col class="col-message">
+          <col>
         </colgroup>
         <thead>
-          <tr>
-            <th>timestamp</th>
-            <th>level</th>
-            <th>source</th>
-            <th>message</th>
-          </tr>
+          <tr><th>Time</th><th>Level</th><th>Source</th><th>Message</th></tr>
         </thead>
-        <tbody id="logBody">
-          <tr><td colspan="4" class="empty-state">
-            <div class="big">◈</div>
-            waiting for events&hellip;
-          </td></tr>
-        </tbody>
+        <tbody id="logBody"></tbody>
       </table>
     </div>
-    <button id="scrollBtn">↓ new events</button>
+    <button id="scrollBtn" hidden>↓ New events</button>
   </div>
 
   <div class="graph-panel" id="graphPanel" hidden>
     <div class="graph-toolbar">
-      <span class="graph-title" id="graphTitle">events</span>
-      <select id="graphRange">
-        <option value="3600">1 hour</option>
-        <option value="21600">6 hours</option>
-        <option value="86400" selected>24 hours</option>
-        <option value="172800">48 hours</option>
-        <option value="604800">7 days</option>
+      <span class="graph-title" id="graphTitle">All events</span>
+      <span class="graph-hint">Click the graph to see the logs from that time</span>
+      <select id="graphRange" aria-label="Graph time range">
+        <option value="3600">Last hour</option>
+        <option value="21600">Last 6 hours</option>
+        <option value="86400" selected>Last 24 hours</option>
+        <option value="172800">Last 2 days</option>
+        <option value="604800">Last 7 days</option>
       </select>
     </div>
-    <div class="graph-chart-wrap" id="graphChartWrap">
+    <div class="graph-chart-wrap">
       <svg id="graphSvg" class="graph-svg" preserveAspectRatio="none"></svg>
       <div class="graph-tooltip" id="graphTooltip" hidden></div>
     </div>
@@ -766,136 +625,160 @@
   <footer>
     <div class="search-wrap">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="filter messages, sources, meta…">
+      <input type="text" id="searchInput" placeholder="Search messages and sources…" aria-label="Search">
       <button type="button" id="searchClear" class="search-clear" aria-label="Clear search">&times;</button>
     </div>
-    <span id="footerStatus">Initialising…</span>
+    <span id="footerStatus"></span>
     <span class="right" id="footerTime"></span>
   </footer>
 
   <div class="toolbar">
-    <select id="levelFilter">
-      <option value="">all levels</option>
-      <option value="debug">debug</option>
-      <option value="info">info</option>
-      <option value="notice">notice</option>
-      <option value="warn">warn</option>
-      <option value="error">error</option>
+    <select id="levelFilter" aria-label="Level">
+      <option value="">All levels</option>
+      <option value="debug">Debug</option>
+      <option value="info">Info</option>
+      <option value="notice">Notice</option>
+      <option value="warn">Warning</option>
+      <option value="error">Error</option>
     </select>
 
-    <select id="sourceFilter">
-      <option value="">all sources</option>
+    <select id="sourceFilter" aria-label="Source">
+      <option value="">All sources</option>
     </select>
 
     <div class="toolbar-sep"></div>
 
-    <button class="btn active" id="liveBtn">
+    <button class="btn active" id="liveBtn" title="Stream new events as they arrive">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-      live
+      Live
     </button>
 
     <button class="btn" id="graphBtn">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 17 9 11 13 15 21 5"/><polyline points="15 5 21 5 21 11"/></svg>
-      graph
+      Graph
     </button>
 
     <button class="btn" id="connBtn">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
-      connection
+      How to send logs
     </button>
 
-    <button class="btn" id="clearBtn">
+    <button class="btn" id="clearBtn" title="Clear the screen (stored logs are kept)">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-      clear view
+      Clear screen
     </button>
-
   </div>
 </div>
 
-<div id="loginOverlay">
-  <div class="login-modal">
-    <h1 style="display:flex;align-items:center;gap:10px;">
-      <svg width="28" height="28" viewBox="0 0 200 200" aria-hidden="true" style="border-radius:50%;flex:none;">
-        <circle cx="100" cy="100" r="90" fill="#2e1f15"/>
-        <circle cx="100" cy="100" r="78" fill="#b98a54"/>
-        <circle cx="100" cy="100" r="78" fill="none" stroke="#8f6a3e" stroke-width="6"/>
-        <circle cx="100" cy="100" r="52" fill="none" stroke="#6e4b28" stroke-width="6"/>
-        <circle cx="100" cy="100" r="26" fill="none" stroke="#8f6a3e" stroke-width="5"/>
-        <circle cx="100" cy="100" r="6" fill="#2ecc71"/>
-      </svg>
-      Log<span style="color: var(--accent);">Chipper</span>
+<div class="overlay" id="loginOverlay" hidden>
+  <div class="modal login-modal">
+    <h1 class="logo">
+      <svg width="28" height="28" aria-hidden="true"><use href="#logoMark"/></svg>
+      <span>Log<span>Chipper</span></span>
     </h1>
-    <p id="setupIntro" style="display:none;margin:0 0 16px;color:var(--muted);font-size:13px;">Create the account you'll use to sign in.</p>
+    <p class="intro" id="setupIntro" hidden>Welcome! Create the account you'll use to sign in.</p>
     <form id="loginForm">
       <div class="form-group">
         <label for="loginUsername">Username</label>
-        <input type="text" id="loginUsername" name="username" required>
+        <input type="text" id="loginUsername" name="username" autocomplete="username" required>
       </div>
       <div class="form-group">
         <label for="loginPassword">Password</label>
         <input type="password" id="loginPassword" name="password" required>
       </div>
-      <div class="form-group" id="confirmGroup" style="display:none;">
+      <div class="form-group" id="confirmGroup" hidden>
         <label for="loginConfirm">Confirm password</label>
-        <input type="password" id="loginConfirm" name="confirm">
+        <input type="password" id="loginConfirm" name="confirm" autocomplete="new-password">
       </div>
-      <div class="error" id="loginError"></div>
-      <button type="submit" class="btn-submit" id="loginSubmit">Sign In</button>
+      <div class="error" id="loginError" hidden></div>
+      <button type="submit" class="btn-submit" id="loginSubmit">Sign in</button>
     </form>
   </div>
 </div>
 
-<div id="connOverlay">
-  <div class="conn-modal">
+<div class="overlay" id="connOverlay" hidden>
+  <div class="modal conn-modal">
     <h2>Send logs to this server</h2>
+    <p class="intro">Point your apps or devices at one of these.</p>
     <div class="conn-row" id="connSyslog">
-      <label>Syslog (UDP/TCP)</label>
-      <div class="conn-line"><code></code><button class="btn" type="button">copy</button></div>
+      <label>Syslog (UDP or TCP)</label>
+      <div class="conn-line"><code></code><button class="btn" type="button">Copy</button></div>
     </div>
     <div class="conn-row" id="connHttp">
       <label>HTTP (JSON)</label>
-      <div class="conn-line"><code></code><button class="btn" type="button">copy</button></div>
+      <div class="conn-line"><code></code><button class="btn" type="button">Copy</button></div>
     </div>
-    <div class="conn-actions"><button class="btn" id="connClose" type="button">close</button></div>
+    <div class="conn-actions"><button class="btn" id="connClose" type="button">Close</button></div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-const MAX_ROWS = 2000;
+const MAX_ROWS = 2000;  // rows kept on screen while following live
+const PAGE = 500;       // events fetched per request
 
-let allEvents = [];
-let liveMode = true;
-let evtSource = null;
+const $ = id => document.getElementById(id);
+const logBody = $('logBody');
+const wrap = $('logWrap');
+const scrollBtn = $('scrollBtn');
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let events = [];                 // loaded events, oldest first
+let totalEvents = 0;             // events stored on the server
 let filters = { q: '', level: '', source: '' };
-let lastRenderedCount = 0;
+let liveMode = true;
+let anchor = null;               // Date picked on the graph; null = showing the latest events
+let reachedStart = false;        // nothing older left to load
+let reachedEnd = true;           // nothing newer left to load
+let loadingMore = false;
+let loadSeq = 0;                 // bumped by each full reload so stale responses are dropped
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function levelClass(l) {
-  const m = { info:'lvl-info', warn:'lvl-warn', error:'lvl-error', debug:'lvl-debug', notice:'lvl-notice' };
-  return m[l] || 'lvl-info';
-}
-
-function fmtTime(ts) {
-  const d = new Date(ts);
-  return d.toISOString().replace('T',' ').replace('Z','').slice(0,23);
-}
+// ── Formatting ────────────────────────────────────────────────────────────────
 
 function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-// Strips a leading "time=... level=..." pair from Go slog text-handler
-// output — the timestamp and level already have their own columns — and
-// unwraps msg="..." into plain text, keeping any trailing key=value attrs.
+function levelClass(level) {
+  return ['info', 'warn', 'error', 'debug', 'notice'].includes(level) ? 'lvl-' + level : 'lvl-info';
+}
+
+function isToday(d) {
+  return d.toDateString() === new Date().toDateString();
+}
+
+// Local time, with the date only when it isn't today, e.g. "14:03:22.481"
+// or "Sep 25 14:03:22.481".
+function timeHtml(ts) {
+  const d = new Date(ts);
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+  const day = isToday(d) ? '' : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ';
+  const ms = String(d.getMilliseconds()).padStart(3, '0');
+  return `${escHtml(day + time)}<span class="ms">.${ms}</span>`;
+}
+
+// e.g. "Sep 26, 14:00"
+function fmtMoment(d) {
+  return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+}
+
+function fmtBytes(n) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return (i ? n.toFixed(1) : n) + ' ' + units[i];
+}
+
+// Go's slog handlers repeat the time and level, which already have their own
+// columns. Strip them and keep the message plus any key=value context.
 function cleanMessage(msg) {
   const str = String(msg);
 
-  // Go slog JSONHandler output: {"time":"...","level":"INFO","msg":"...",...}
-  // Drop time/level (already their own columns) but keep msg plus any other
-  // structured fields, since those carry real context (ip, id, domain, ...).
+  // JSONHandler: {"time":"...","level":"INFO","msg":"...",...}
   if (str[0] === '{') {
     try {
       const obj = JSON.parse(str);
@@ -909,7 +792,7 @@ function cleanMessage(msg) {
     } catch {}
   }
 
-  // Go slog TextHandler output: time=... level=... msg="..." ...
+  // TextHandler: time=... level=... msg="..." key=value ...
   const rest = str.replace(/^time=\S+\s+level=\S+\s+/, '');
   const m = rest.match(/^msg="((?:[^"\\]|\\.)*)"\s*(.*)$/);
   if (!m) return rest;
@@ -917,390 +800,426 @@ function cleanMessage(msg) {
   return m[2] ? `${text}  ${m[2]}` : text;
 }
 
+// ── Rendering ─────────────────────────────────────────────────────────────────
+
 function matchesFilters(e) {
   if (filters.level && e.level !== filters.level) return false;
   if (filters.source && e.source !== filters.source) return false;
   if (filters.q) {
-    const q = filters.q.toLowerCase();
-    const hay = (e.message + e.source + (e.meta||'')).toLowerCase();
-    if (!hay.includes(q)) return false;
+    const hay = (e.message + e.source + (e.meta || '')).toLowerCase();
+    if (!hay.includes(filters.q.toLowerCase())) return false;
   }
   return true;
 }
 
-function rowHtml(e, isNew) {
+function rowHtml(e, isNew = false) {
+  const d = new Date(e.created_at);
+  const meta = e.meta ? `<span class="meta">${escHtml(e.meta)}</span>` : '';
   return `<tr class="${isNew ? 'new-row' : ''}" data-id="${e.id}">
-    <td class="td-time">${fmtTime(e.created_at)}</td>
+    <td class="td-time" title="${escHtml(d.toString())}">${timeHtml(e.created_at)}</td>
     <td><span class="level-badge ${levelClass(e.level)}">${escHtml(e.level)}</span></td>
-    <td class="td-source"><span onclick="filterSource('${escHtml(e.source)}')">${escHtml(e.source||'—')}</span></td>
-    <td class="td-message">${escHtml(cleanMessage(e.message))}${e.meta ? `<span class="meta">${escHtml(e.meta)}</span>` : ''}</td>
+    <td class="td-source"><span class="source-link" data-source="${escHtml(e.source)}" title="Show only this source">${escHtml(e.source || '—')}</span></td>
+    <td class="td-message">${escHtml(cleanMessage(e.message))}${meta}</td>
   </tr>`;
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-
-function renderAll() {
-  const body = document.getElementById('logBody');
-  const visible = allEvents.filter(matchesFilters);
-
-  if (visible.length === 0) {
-    body.innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>no matching events</td></tr>`;
-    updateCounts(0);
-    return;
-  }
-
-  body.innerHTML = visible.map(e => rowHtml(e, false)).join('');
-  updateCounts(visible.length);
-
-  if (liveMode) scrollToBottom();
+function showEmpty(msg) {
+  logBody.innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>${escHtml(msg)}</td></tr>`;
+  updateCounts(0);
 }
 
-// The stream can open before the initial history fetch returns; hold its
-// events until then so the history render doesn't clobber them.
+function renderAll() {
+  const visible = events.filter(matchesFilters);
+  if (!visible.length) {
+    showEmpty(anchor ? 'Nothing was logged around that time.' : 'No matching events.');
+    return;
+  }
+  logBody.innerHTML = visible.map(e => rowHtml(e)).join('');
+  updateCounts(visible.length);
+  if (!anchor) scrollToBottom();
+}
+
+function updateCounts(visible = logBody.querySelectorAll('tr[data-id]').length) {
+  $('totalCount').textContent = totalEvents.toLocaleString();
+  $('visibleCount').textContent = visible.toLocaleString();
+}
+
+// Live events can arrive before the first page of history has loaded; hold
+// them until then so the history render doesn't wipe them out.
 let historyReady = false;
 const pendingEvents = [];
 
 function appendEvent(e) {
+  if (anchor) return;
   if (!historyReady) { pendingEvents.push(e); return; }
-  if (allEvents.length >= MAX_ROWS) allEvents.shift();
-  allEvents.push(e);
+
+  if (events.length >= MAX_ROWS) events.shift();
+  events.push(e);
   totalEvents++;
 
-  const body = document.getElementById('logBody');
-  const emptyRow = body.querySelector('.empty-state');
-  if (emptyRow) body.innerHTML = '';
+  if (!matchesFilters(e)) { updateCounts(); return; }
 
-  if (!matchesFilters(e)) {
-    updateCounts();
-    return;
-  }
-
-  body.insertAdjacentHTML('beforeend', rowHtml(e, true));
-
-  // Prune excess DOM rows
-  while (body.rows.length > MAX_ROWS) body.deleteRow(0);
+  logBody.querySelector('.empty-state')?.parentElement.remove();
+  logBody.insertAdjacentHTML('beforeend', rowHtml(e, true));
+  while (logBody.rows.length > MAX_ROWS) logBody.deleteRow(0);
 
   updateCounts();
-  handleAutoScroll();
+  if (liveMode && followBottom) scrollToBottom();
+  else scrollBtn.hidden = false;
 }
 
-let totalEvents = 0;
+logBody.addEventListener('click', e => {
+  const link = e.target.closest('.source-link');
+  if (link) setSourceFilter(link.dataset.source);
+});
 
-function updateCounts(visibleOverride) {
-  const visible = visibleOverride !== undefined
-    ? visibleOverride
-    : document.getElementById('logBody').querySelectorAll('tr[data-id]').length;
-  document.getElementById('totalCount').textContent = totalEvents;
-  document.getElementById('visibleCount').textContent = visible;
-}
+// ── Scrolling ─────────────────────────────────────────────────────────────────
 
-// ── Scroll ────────────────────────────────────────────────────────────────────
-
-const wrap = document.getElementById('logWrap');
-const scrollBtn = document.getElementById('scrollBtn');
-
-// Sticky follow-state, not a per-event pixel recheck: a single stale
-// scrollHeight/scrollTop reading (plausible with the delayed reflow
-// browsers do in backgrounded tabs) would otherwise permanently flip
-// auto-follow off with nothing to self-correct it afterward. Only a
-// genuine user-initiated scroll away from the bottom should break it.
+// Whether to keep the newest row in view. Only a real user scroll away from
+// the bottom turns it off — re-measuring on every event would flip it off by
+// mistake when a background tab reports stale layout sizes.
 let followBottom = true;
 let programmaticScroll = false;
 
-function scrollToBottom() {
-  // Instant, not CSS scroll-behavior:smooth — a smooth scroll animates via
-  // requestAnimationFrame, which browsers throttle/pause in unfocused tabs,
-  // so live auto-follow would visibly stall whenever the window loses focus.
+function setScrollTop(top) {
   programmaticScroll = true;
-  wrap.scrollTop = wrap.scrollHeight;
-  scrollBtn.style.display = 'none';
-  followBottom = true;
+  wrap.scrollTop = top;
 }
 
-function handleAutoScroll() {
-  if (liveMode && followBottom) {
-    scrollToBottom();
-  } else {
-    scrollBtn.style.display = 'block';
-  }
+// Jumps instantly rather than smooth-scrolling: smooth scrolling pauses in
+// background tabs, which would make live follow stall.
+function scrollToBottom() {
+  setScrollTop(wrap.scrollHeight);
+  scrollBtn.hidden = true;
+  followBottom = true;
 }
 
 wrap.addEventListener('scroll', () => {
   if (programmaticScroll) { programmaticScroll = false; return; }
   const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 40;
   followBottom = atBottom;
-  if (atBottom) scrollBtn.style.display = 'none';
+  if (atBottom) { scrollBtn.hidden = true; fetchNewer(); }
   if (wrap.scrollTop < 200) fetchOlder();
 });
 
 scrollBtn.addEventListener('click', scrollToBottom);
 
-// ── SSE Stream ────────────────────────────────────────────────────────────────
+// ── Loading events ────────────────────────────────────────────────────────────
+// Filters and search run on the server, so they cover the whole database,
+// not just what's loaded here.
+
+async function getLogs(extra = {}) {
+  const params = new URLSearchParams({ limit: PAGE, ...extra });
+  if (filters.level) params.set('level', filters.level);
+  if (filters.source) params.set('source', filters.source);
+  if (filters.q) params.set('q', filters.q);
+  const res = await fetch('/api/logs?' + params);
+  if (!res.ok) throw new Error(res.statusText);
+  return (await res.json()) || [];   // newest first unless order=asc
+}
+
+// The newest page of events.
+async function loadLatest() {
+  const seq = ++loadSeq;
+  try {
+    const rows = await getLogs();
+    if (seq !== loadSeq) return;
+    events = rows.reverse();
+    reachedStart = rows.length < PAGE;
+    reachedEnd = true;
+    renderAll();
+  } catch (e) {
+    if (seq === loadSeq) setFooter('Couldn’t load events: ' + e.message);
+  } finally {
+    if (seq === loadSeq) {
+      historyReady = true;
+      const lastId = events.length ? events[events.length - 1].id : 0;
+      pendingEvents.splice(0).filter(e => e.id > lastId).forEach(appendEvent);
+    }
+  }
+}
+
+// Half a page either side of the anchor time, scrolled so the first event at
+// or after it is in the middle of the screen.
+async function loadAround(t) {
+  const seq = ++loadSeq;
+  const half = PAGE / 2;
+  const iso = t.toISOString();
+  try {
+    const [before, after] = await Promise.all([
+      getLogs({ until: iso, limit: half }),
+      getLogs({ since: iso, limit: half, order: 'asc' }),
+    ]);
+    if (seq !== loadSeq) return;
+    events = before.reverse().concat(after);
+    reachedStart = before.length < half;
+    reachedEnd = after.length < half;
+    renderAll();
+
+    const target = after.length
+      ? logBody.querySelector(`tr[data-id="${after[0].id}"]`)
+      : logBody.querySelector('tr[data-id]:last-child');
+    if (target) {
+      target.classList.add('jump-target');
+      setScrollTop(target.offsetTop - wrap.clientHeight / 2);
+    }
+  } catch (e) {
+    if (seq === loadSeq) setFooter('Couldn’t load events: ' + e.message);
+  }
+}
+
+// More events are loaded as you scroll near either end. Older rows go in
+// above the viewport, so the scroll position is shifted to keep the same rows
+// on screen.
+async function fetchOlder() {
+  if (loadingMore || reachedStart || !events.length) return;
+  loadingMore = true;
+  const seq = loadSeq;
+  try {
+    const older = (await getLogs({ before_id: events[0].id })).reverse();
+    if (seq !== loadSeq) return;
+    if (older.length < PAGE) reachedStart = true;
+    if (!older.length) return;
+    const prevHeight = wrap.scrollHeight;
+    events = older.concat(events);
+    logBody.insertAdjacentHTML('afterbegin', older.filter(matchesFilters).map(e => rowHtml(e)).join(''));
+    setScrollTop(wrap.scrollTop + (wrap.scrollHeight - prevHeight));
+    updateCounts();
+  } catch (e) {
+    setFooter('Couldn’t load older events: ' + e.message);
+  } finally {
+    loadingMore = false;
+  }
+}
+
+async function fetchNewer() {
+  if (loadingMore || reachedEnd || !events.length) return;
+  loadingMore = true;
+  const seq = loadSeq;
+  try {
+    const newer = await getLogs({ after_id: events[events.length - 1].id, order: 'asc' });
+    if (seq !== loadSeq) return;
+    if (newer.length < PAGE) reachedEnd = true;
+    events = events.concat(newer);
+    logBody.insertAdjacentHTML('beforeend', newer.filter(matchesFilters).map(e => rowHtml(e)).join(''));
+    updateCounts();
+  } catch (e) {
+    setFooter('Couldn’t load newer events: ' + e.message);
+  } finally {
+    loadingMore = false;
+  }
+}
+
+function reload() {
+  if (anchor) loadAround(anchor);
+  else loadLatest();
+  refreshGraph();
+}
+
+// ── Live stream ───────────────────────────────────────────────────────────────
+
+let stream = null;
+const knownSources = new Set();
 
 function connectStream() {
-  if (evtSource) evtSource.close();
+  if (stream) stream.close();
+  stream = new EventSource('/api/stream');
 
-  evtSource = new EventSource('/api/stream');
-
-  evtSource.onopen = () => {
-    setStatus('live', 'live');
+  stream.onopen = () => {
+    setStatus('live', 'Live');
     refreshDbSize();
   };
-
-  evtSource.onmessage = (ev) => {
+  stream.onmessage = ev => {
     try {
       const e = JSON.parse(ev.data);
       appendEvent(e);
-      refreshSources();
+      if (!knownSources.has(e.source)) refreshSources();
     } catch {}
   };
-
-  evtSource.onerror = () => {
-    setStatus('error', 'reconnecting');
-    setFooter('Connection lost, retrying…');
+  stream.onerror = () => {
+    setStatus('error', 'Reconnecting…');
+    setFooter('Lost connection to the server, retrying…');
   };
 }
 
 function disconnectStream() {
-  if (evtSource) { evtSource.close(); evtSource = null; }
-  setStatus('paused', 'paused');
-  setFooter('Live stream paused');
+  if (stream) { stream.close(); stream = null; }
 }
+
+// Back to the newest events with the live stream on.
+function goLive() {
+  anchor = null;
+  liveMode = true;
+  $('liveBtn').classList.add('active');
+  $('historyBar').hidden = true;
+  historyReady = false;
+  setStatus('', 'Connecting…');
+  connectStream();
+  refreshSources();
+  reload();
+}
+
+function pause() {
+  liveMode = false;
+  $('liveBtn').classList.remove('active');
+  disconnectStream();
+  if (anchor) {
+    setStatus('history', 'Viewing history');
+  } else {
+    setStatus('', 'Paused');
+    setFooter('Live updates paused');
+  }
+}
+
+// Shows the logs around a moment in time, with live updates off.
+function jumpTo(t) {
+  anchor = t;
+  pause();
+  $('historyText').textContent = `Showing logs from around ${fmtMoment(t)}`;
+  $('historyBar').hidden = false;
+  scrollBtn.hidden = true;
+  reload();
+}
+
+$('liveBtn').addEventListener('click', () => liveMode ? pause() : goLive());
+$('backToLiveBtn').addEventListener('click', goLive);
 
 // ── Status ────────────────────────────────────────────────────────────────────
 
 function setStatus(cls, text) {
-  const dot = document.getElementById('statusDot');
-  const txt = document.getElementById('statusText');
-  dot.className = 'status-dot';
-  if (cls === 'live') dot.classList.add('live');
-  txt.textContent = text;
+  $('statusDot').className = 'status-dot' + (cls ? ' ' + cls : '');
+  $('statusText').textContent = text;
 }
 
-function fmtBytes(n) {
-  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let i = 0;
-  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
-  return (i ? n.toFixed(1) : n) + ' ' + u[i];
+function setFooter(msg) {
+  $('footerStatus').textContent = msg;
 }
 
 async function refreshDbSize() {
   try {
-    const res = await fetch('/api/dbsize');
-    const { bytes, events } = await res.json();
-    totalEvents = events;
+    const { bytes, events: count } = await (await fetch('/api/dbsize')).json();
+    totalEvents = count;
     updateCounts();
     setFooter('Database size: ' + fmtBytes(bytes));
   } catch {}
 }
-setInterval(() => { if (evtSource) refreshDbSize(); }, 30000);
-
-function setFooter(msg) {
-  document.getElementById('footerStatus').textContent = msg;
-}
-
-// ── Fetch history ─────────────────────────────────────────────────────────────
-
-const HISTORY_PAGE = 500;
-let reachedStart = false;
-let loadingOlder = false;
-
-// Loads the next page of older events when the user scrolls near the top,
-// keeping the viewport anchored on the same rows.
-async function fetchOlder() {
-  if (loadingOlder || reachedStart || !allEvents.length) return;
-  loadingOlder = true;
-  try {
-    const params = buildLogParams();
-    params.set('before_id', allEvents[0].id);
-    const res = await fetch('/api/logs?' + params);
-    const older = ((await res.json()) || []).slice().reverse();
-    if (older.length < HISTORY_PAGE) reachedStart = true;
-    if (!older.length) return;
-
-    const body = document.getElementById('logBody');
-    const prevHeight = wrap.scrollHeight;
-    const prevTop = wrap.scrollTop;
-    allEvents = older.concat(allEvents);
-    body.insertAdjacentHTML('afterbegin', older.filter(matchesFilters).map(e => rowHtml(e, false)).join(''));
-    programmaticScroll = true;
-    wrap.scrollTop = prevTop + (wrap.scrollHeight - prevHeight);
-    updateCounts();
-  } catch(e) {
-    setFooter('Failed to load older events: ' + e.message);
-  } finally {
-    loadingOlder = false;
-  }
-}
-
-function buildLogParams() {
-  const params = new URLSearchParams({ limit: HISTORY_PAGE });
-  if (filters.level) params.set('level', filters.level);
-  if (filters.source) params.set('source', filters.source);
-  if (filters.q) params.set('q', filters.q);
-  return params;
-}
-
-// Queries the server for events matching the current filters — search runs
-// against the full database (SQL LIKE), not just whatever's already loaded
-// in the browser, so it can find matches beyond the last 500/2000 rows.
-async function fetchHistory() {
-  try {
-    const res = await fetch('/api/logs?' + buildLogParams());
-    const data = await res.json();
-
-    allEvents = (data || []).slice().reverse(); // API returns newest first
-    reachedStart = allEvents.length < HISTORY_PAGE;
-    renderAll();
-  } catch(e) {
-    setFooter('Failed to fetch history: ' + e.message);
-  } finally {
-    historyReady = true;
-    const lastId = allEvents.length ? allEvents[allEvents.length - 1].id : 0;
-    pendingEvents.splice(0).filter(e => e.id > lastId).forEach(appendEvent);
-  }
-}
+setInterval(() => { if (stream) refreshDbSize(); }, 30000);
 
 async function refreshSources() {
   try {
-    const res = await fetch('/api/sources');
-    const sources = await res.json();
-    const sel = document.getElementById('sourceFilter');
+    const sources = (await (await fetch('/api/sources')).json()) || [];
+    sources.forEach(s => knownSources.add(s));
+    const sel = $('sourceFilter');
     const current = sel.value;
-    sel.innerHTML = '<option value="">all sources</option>' +
-      (sources||[]).map(s => `<option value="${escHtml(s)}" ${s===current?'selected':''}>${escHtml(s)}</option>`).join('');
+    sel.innerHTML = '<option value="">All sources</option>' +
+      sources.map(s => `<option value="${escHtml(s)}" ${s === current ? 'selected' : ''}>${escHtml(s)}</option>`).join('');
   } catch {}
 }
 
-// ── Controls ──────────────────────────────────────────────────────────────────
+// ── Filters ───────────────────────────────────────────────────────────────────
 
-document.getElementById('liveBtn').addEventListener('click', () => {
-  liveMode = !liveMode;
-  const btn = document.getElementById('liveBtn');
-  if (liveMode) {
-    btn.classList.add('active');
-    connectStream();
-  } else {
-    btn.classList.remove('active');
-    disconnectStream();
-  }
-});
-
-document.getElementById('clearBtn').addEventListener('click', () => {
-  allEvents = [];
-  document.getElementById('logBody').innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>view cleared</td></tr>`;
-  updateCounts(0);
-});
-
-const searchInput = document.getElementById('searchInput');
-const searchWrap = document.querySelector('.search-wrap');
-const searchClear = document.getElementById('searchClear');
-
-function updateSearchClear() {
-  searchWrap.classList.toggle('has-value', !!searchInput.value);
-}
-
+const searchInput = $('searchInput');
+const searchWrap = searchInput.closest('.search-wrap');
 let searchDebounce = null;
 
-searchInput.addEventListener('input', function() {
-  filters.q = this.value;
-  updateSearchClear();
-  // Debounced — search now queries the database (SQL LIKE) instead of just
-  // filtering whatever's already loaded, so it's a real network+SQL round
-  // trip and not worth doing on every keystroke.
+// Each search is a database query, so wait for typing to pause.
+searchInput.addEventListener('input', () => {
+  filters.q = searchInput.value;
+  searchWrap.classList.toggle('has-value', !!filters.q);
   clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(() => {
-    fetchHistory();
-    refreshGraphIfOpen();
-  }, 400);
+  searchDebounce = setTimeout(reload, 400);
 });
 
-// Plain <input> outside a <form> shouldn't do anything on Enter, but some
-// mobile keyboards' "search"/"go" key still triggers a native action that
-// leaves the field in a bad state (cursor resets to 0 on refocus) — block it.
-searchInput.addEventListener('keydown', function(e) {
+// Some mobile keyboards' "Go" key leaves the field in a broken state.
+searchInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') e.preventDefault();
 });
 
-searchClear.addEventListener('click', () => {
+$('searchClear').addEventListener('click', () => {
   searchInput.value = '';
   filters.q = '';
-  updateSearchClear();
+  searchWrap.classList.remove('has-value');
   clearTimeout(searchDebounce);
-  fetchHistory();
   searchInput.focus();
-  refreshGraphIfOpen();
+  reload();
 });
 
-document.getElementById('levelFilter').addEventListener('change', function() {
-  filters.level = this.value;
-  fetchHistory();
-  refreshGraphIfOpen();
+$('levelFilter').addEventListener('change', e => {
+  filters.level = e.target.value;
+  reload();
 });
 
-document.getElementById('sourceFilter').addEventListener('change', function() {
-  filters.source = this.value;
-  fetchHistory();
-  refreshGraphIfOpen();
-});
+$('sourceFilter').addEventListener('change', e => setSourceFilter(e.target.value));
 
-function filterSource(src) {
+function setSourceFilter(src) {
   filters.source = src;
-  document.getElementById('sourceFilter').value = src;
-  fetchHistory();
-  refreshGraphIfOpen();
+  $('sourceFilter').value = src;
+  reload();
 }
 
+$('clearBtn').addEventListener('click', () => {
+  events = [];
+  showEmpty('Screen cleared. New events will appear here.');
+});
+
 // ── Graph ─────────────────────────────────────────────────────────────────────
-// Server-aggregated (SQL GROUP BY) — the client only ever holds one small
-// array of {t, count} buckets, never raw events, regardless of time range.
+// The server does the counting (SQL GROUP BY), so the page only ever holds a
+// small list of {t, count} buckets whatever the time range.
+
+const graphPanel = $('graphPanel');
+const graphSvg = $('graphSvg');
+const graphTooltip = $('graphTooltip');
+const graphRangeSel = $('graphRange');
 
 let graphOpen = false;
-let graphRefreshTimer = null;
-
-const graphPanel = document.getElementById('graphPanel');
-const graphSvg = document.getElementById('graphSvg');
-const graphTooltip = document.getElementById('graphTooltip');
-const graphRangeSel = document.getElementById('graphRange');
+let graphTimer = null;
+let graph = null;   // last drawn: { points, bucketSeconds, padL, plotW, W }
 
 const NICE_BUCKETS = [10, 30, 60, 300, 600, 900, 1800, 3600, 2*3600, 3*3600, 6*3600, 12*3600, 24*3600];
 
 function pickBucketSeconds(rangeSeconds, targetPoints = 120) {
   const raw = rangeSeconds / targetPoints;
-  for (const b of NICE_BUCKETS) if (b >= raw) return b;
-  return NICE_BUCKETS[NICE_BUCKETS.length - 1];
+  return NICE_BUCKETS.find(b => b >= raw) || NICE_BUCKETS[NICE_BUCKETS.length - 1];
 }
 
-function fmtBucketTime(unixSeconds, rangeSeconds) {
+function fmtAxisTime(unixSeconds, rangeSeconds) {
   const d = new Date(unixSeconds * 1000);
   return rangeSeconds > 3 * 86400
-    ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    ? d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+    : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+}
+
+// e.g. "Sep 26, 14:00–14:10"
+function fmtBucket(t, bucketSeconds) {
+  const end = new Date((t + bucketSeconds) * 1000);
+  return fmtMoment(new Date(t * 1000)) + '–' +
+    end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 }
 
 function setGraphTitle() {
   const parts = [];
   if (filters.level) parts.push(filters.level);
   if (filters.source) parts.push(filters.source);
-  if (filters.q) parts.push('"' + filters.q + '"');
-  document.getElementById('graphTitle').textContent = parts.length ? parts.join(' · ') : 'all events';
+  if (filters.q) parts.push(`“${filters.q}”`);
+  $('graphTitle').textContent = parts.length ? parts.join(' · ') : 'All events';
 }
 
 async function fetchHistogram() {
   const rangeSeconds = parseInt(graphRangeSel.value, 10);
-  const bucketSeconds = pickBucketSeconds(rangeSeconds);
-  const since = new Date(Date.now() - rangeSeconds * 1000).toISOString();
-  const params = new URLSearchParams({ since, bucket_seconds: bucketSeconds });
+  const params = new URLSearchParams({
+    since: new Date(Date.now() - rangeSeconds * 1000).toISOString(),
+    bucket_seconds: pickBucketSeconds(rangeSeconds),
+  });
   if (filters.level) params.set('level', filters.level);
   if (filters.source) params.set('source', filters.source);
   if (filters.q) params.set('q', filters.q);
 
   try {
-    const res = await fetch('/api/logs/histogram?' + params);
-    const data = await res.json();
+    const data = await (await fetch('/api/logs/histogram?' + params)).json();
     renderGraph(data, rangeSeconds);
-  } catch (e) {
+  } catch {
     graphSvg.innerHTML = '';
+    graph = null;
   }
 }
 
@@ -1309,7 +1228,7 @@ function renderGraph(data, rangeSeconds) {
   const nowSec = Math.floor(Date.now() / 1000);
   const sinceSec = Math.floor(new Date(data.since).getTime() / 1000);
 
-  // Fill in explicit zero counts for empty buckets so the line doesn't skip gaps.
+  // Fill empty buckets with zero so quiet periods show as dips, not gaps.
   const counts = new Map((data.buckets || []).map(b => [b.t, b.count]));
   const points = [];
   const start = Math.floor(sinceSec / bucketSeconds) * bucketSeconds;
@@ -1317,9 +1236,7 @@ function renderGraph(data, rangeSeconds) {
     points.push({ t, count: counts.get(t) || 0 });
   }
 
-  // viewBox matches the SVG's real rendered pixel size (not a fixed 1000x200
-  // coordinate space) so padding/font-size stay true pixel sizes regardless
-  // of panel height — a mismatched viewBox scale otherwise squashes text.
+  // Draw in real pixels (viewBox = rendered size) so text isn't stretched.
   const rect = graphSvg.getBoundingClientRect();
   const W = Math.max(rect.width, 100), H = Math.max(rect.height, 60);
   const padL = 30, padR = 6, padT = 10, padB = 18;
@@ -1327,38 +1244,35 @@ function renderGraph(data, rangeSeconds) {
 
   const maxCount = Math.max(1, ...points.map(p => p.count));
   const yMax = maxCount <= 4 ? maxCount + 1 : Math.ceil(maxCount * 1.15);
-
   const xAt = i => padL + (points.length <= 1 ? 0 : (i / (points.length - 1)) * plotW);
   const yAt = c => padT + plotH - (c / yMax) * plotH;
 
-  let linePath = '';
-  points.forEach((p, i) => {
-    linePath += `${i === 0 ? 'M' : 'L'}${xAt(i).toFixed(1)},${yAt(p.count).toFixed(1)} `;
-  });
-  linePath = linePath.trim();
+  const linePath = points.map((p, i) => `${i ? 'L' : 'M'}${xAt(i).toFixed(1)},${yAt(p.count).toFixed(1)}`).join(' ');
   const baseline = (padT + plotH).toFixed(1);
   const areaPath = `${linePath} L${xAt(points.length - 1).toFixed(1)},${baseline} L${xAt(0).toFixed(1)},${baseline} Z`;
 
-  const yTicks = [...new Set([0, Math.round(yMax / 2), yMax])];
-  let gridLines = '', yLabels = '';
-  yTicks.forEach(v => {
-    const gy = yAt(v);
-    gridLines += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W - padR}" y2="${gy.toFixed(1)}"/>`;
-    yLabels += `<text class="graph-axis-label" x="${padL - 6}" y="${(gy + 3).toFixed(1)}" text-anchor="end">${v}</text>`;
-  });
-
-  const xTickCount = Math.min(6, points.length);
-  let xLabels = '';
-  for (let i = 0; i < xTickCount; i++) {
-    const idx = Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1));
-    const p = points[idx];
-    if (!p) continue;
-    const anchor = i === 0 ? 'start' : (i === xTickCount - 1 ? 'end' : 'middle');
-    xLabels += `<text class="graph-axis-label" x="${xAt(idx).toFixed(1)}" y="${H - 4}" text-anchor="${anchor}">${escHtml(fmtBucketTime(p.t, rangeSeconds))}</text>`;
+  let gridLines = '', labels = '';
+  for (const v of new Set([0, Math.round(yMax / 2), yMax])) {
+    const y = yAt(v).toFixed(1);
+    gridLines += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>`;
+    labels += `<text class="graph-axis-label" x="${padL - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${v}</text>`;
   }
 
-  if (points.length && maxCount === 0 && !(data.buckets || []).length) {
-    // still render the (flat) axes — an all-zero graph is informative too
+  const xTicks = Math.min(6, points.length);
+  for (let i = 0; i < xTicks; i++) {
+    const idx = Math.round((i / (xTicks - 1 || 1)) * (points.length - 1));
+    const anchorPos = i === 0 ? 'start' : i === xTicks - 1 ? 'end' : 'middle';
+    labels += `<text class="graph-axis-label" x="${xAt(idx).toFixed(1)}" y="${H - 4}" text-anchor="${anchorPos}">${escHtml(fmtAxisTime(points[idx].t, rangeSeconds))}</text>`;
+  }
+
+  // Dashed line at the time the log view is pinned to, if it's on this graph.
+  let marker = '';
+  if (anchor && points.length > 1) {
+    const i = (anchor.getTime() / 1000 - start) / bucketSeconds;
+    if (i >= 0 && i <= points.length - 1) {
+      const x = xAt(i).toFixed(1);
+      marker = `<line class="graph-marker" x1="${x}" y1="${padT}" x2="${x}" y2="${baseline}"/>`;
+    }
   }
 
   graphSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -1370,52 +1284,60 @@ function renderGraph(data, rangeSeconds) {
       </linearGradient>
     </defs>
     <g class="graph-grid">${gridLines}</g>
-    ${yLabels}${xLabels}
+    ${labels}
     <path class="graph-area" d="${areaPath}"/>
     <path class="graph-line" d="${linePath}"/>
-    <line class="graph-crosshair" id="graphCrosshair" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}"/>
-    <rect class="graph-hit" x="${padL}" y="${padT}" width="${Math.max(plotW,0)}" height="${Math.max(plotH,0)}"/>
+    ${marker}
+    <line class="graph-crosshair" id="graphCrosshair" x1="${padL}" y1="${padT}" x2="${padL}" y2="${baseline}" display="none"/>
+    <rect class="graph-hit" x="${padL}" y="${padT}" width="${Math.max(plotW, 0)}" height="${Math.max(plotH, 0)}"/>
   `;
 
-  graphSvg.__points = points;
-  graphSvg.__scale = { padL, plotW, W };
+  graph = { points, bucketSeconds, padL, plotW, W };
 }
 
-function graphPointerMove(evt) {
-  const points = graphSvg.__points;
-  if (!points || !points.length) return;
-  const scale = graphSvg.__scale;
+// The bucket under the pointer and its x position in the SVG.
+function graphPointAt(evt) {
+  if (!graph || !graph.points.length) return null;
+  const { points, padL, plotW, W } = graph;
   const rect = graphSvg.getBoundingClientRect();
   const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-  const relX = (clientX - rect.left) / rect.width * scale.W;
-  const frac = Math.max(0, Math.min(1, (relX - scale.padL) / scale.plotW));
+  const x = (clientX - rect.left) / rect.width * W;
+  const frac = Math.max(0, Math.min(1, (x - padL) / plotW));
   const idx = Math.round(frac * (points.length - 1));
-  const p = points[idx];
-  if (!p) return;
-
-  const px = scale.padL + (points.length <= 1 ? 0 : (idx / (points.length - 1)) * scale.plotW);
-  const crosshair = document.getElementById('graphCrosshair');
-  crosshair.setAttribute('x1', px);
-  crosshair.setAttribute('x2', px);
-  crosshair.style.display = 'block';
-
-  graphTooltip.hidden = false;
-  graphTooltip.style.left = (px / scale.W * 100) + '%';
-  graphTooltip.innerHTML = `<span class="t">${escHtml(new Date(p.t * 1000).toLocaleString())}</span>${p.count}`;
+  const px = padL + (points.length <= 1 ? 0 : (idx / (points.length - 1)) * plotW);
+  return { point: points[idx], px };
 }
 
-function graphPointerLeave() {
-  const crosshair = document.getElementById('graphCrosshair');
-  if (crosshair) crosshair.style.display = 'none';
+graphSvg.addEventListener('mousemove', showGraphTooltip);
+graphSvg.addEventListener('touchmove', showGraphTooltip, { passive: true });
+graphSvg.addEventListener('mouseleave', hideGraphTooltip);
+graphSvg.addEventListener('touchend', hideGraphTooltip);
+
+function showGraphTooltip(evt) {
+  const hit = graphPointAt(evt);
+  if (!hit) return;
+  const crosshair = $('graphCrosshair');
+  crosshair.setAttribute('x1', hit.px);
+  crosshair.setAttribute('x2', hit.px);
+  crosshair.removeAttribute('display');
+
+  const n = hit.point.count;
+  graphTooltip.hidden = false;
+  graphTooltip.style.left = (hit.px / graph.W * 100) + '%';
+  graphTooltip.innerHTML = `<span class="t">${escHtml(fmtBucket(hit.point.t, graph.bucketSeconds))}</span>${n.toLocaleString()} event${n === 1 ? '' : 's'}`;
+}
+
+function hideGraphTooltip() {
+  $('graphCrosshair')?.setAttribute('display', 'none');
   graphTooltip.hidden = true;
 }
 
-graphSvg.addEventListener('mousemove', graphPointerMove);
-graphSvg.addEventListener('mouseleave', graphPointerLeave);
-graphSvg.addEventListener('touchmove', graphPointerMove, { passive: true });
-graphSvg.addEventListener('touchend', graphPointerLeave);
+graphSvg.addEventListener('click', evt => {
+  const hit = graphPointAt(evt);
+  if (hit) jumpTo(new Date(hit.point.t * 1000));
+});
 
-function refreshGraphIfOpen() {
+function refreshGraph() {
   if (!graphOpen) return;
   setGraphTitle();
   fetchHistogram();
@@ -1423,221 +1345,171 @@ function refreshGraphIfOpen() {
 
 function setGraphOpen(open) {
   graphOpen = open;
-  document.getElementById('graphBtn').classList.toggle('active', graphOpen);
-  graphPanel.hidden = !graphOpen;
-  if (graphOpen) {
-    setGraphTitle();
-    fetchHistogram();
-    graphRefreshTimer = setInterval(() => { if (liveMode) fetchHistogram(); }, 20000);
-  } else if (graphRefreshTimer) {
-    clearInterval(graphRefreshTimer);
-    graphRefreshTimer = null;
+  $('graphBtn').classList.toggle('active', open);
+  graphPanel.hidden = !open;
+  clearInterval(graphTimer);
+  if (open) {
+    refreshGraph();
+    graphTimer = setInterval(() => { if (liveMode) fetchHistogram(); }, 20000);
   }
 }
 
-document.getElementById('graphBtn').addEventListener('click', () => setGraphOpen(!graphOpen));
+$('graphBtn').addEventListener('click', () => setGraphOpen(!graphOpen));
+graphRangeSel.addEventListener('change', refreshGraph);
 
-graphRangeSel.addEventListener('change', () => { if (graphOpen) fetchHistogram(); });
-
-// Open by default on desktop (matches the 700px mobile breakpoint) — mobile
-// starts collapsed since screen space is tighter there.
+// Open by default on desktop; phones start with it closed to save space.
 if (window.matchMedia('(min-width: 701px)').matches) setGraphOpen(true);
 
-// ── Connection strings ────────────────────────────────────────────────────────
+// ── "How to send logs" ────────────────────────────────────────────────────────
 
 async function showConnection() {
   let cfg = {};
-  try { cfg = await (await fetch('/api/config')).json(); } catch (e) {}
-  const host = location.hostname;
+  try { cfg = await (await fetch('/api/config')).json(); } catch {}
   const fill = (id, text) => {
-    const row = document.getElementById(id);
-    row.style.display = text ? '' : 'none';
+    const row = $(id);
+    row.hidden = !text;
     if (text) row.querySelector('code').textContent = text;
   };
-  fill('connSyslog', cfg.syslog_enabled && cfg.syslog_port ? `${host}:${cfg.syslog_port}` : '');
+  fill('connSyslog', cfg.syslog_enabled && cfg.syslog_port ? `${location.hostname}:${cfg.syslog_port}` : '');
   const auth = cfg.ingest_token_enabled ? ` -H "Authorization: Bearer <INGEST_TOKEN>"` : '';
   fill('connHttp', `curl -X POST ${location.origin}/api/logs -H "Content-Type: application/json"${auth} -d '{"source":"my-app","level":"info","message":"hello"}'`);
-  document.getElementById('connOverlay').classList.add('show');
+  $('connOverlay').hidden = false;
 }
 
-document.getElementById('connBtn').addEventListener('click', showConnection);
-document.getElementById('connClose').addEventListener('click', () => document.getElementById('connOverlay').classList.remove('show'));
-document.getElementById('connOverlay').addEventListener('click', e => {
-  if (e.target.id === 'connOverlay') e.target.classList.remove('show');
+$('connBtn').addEventListener('click', showConnection);
+$('connClose').addEventListener('click', () => { $('connOverlay').hidden = true; });
+$('connOverlay').addEventListener('click', e => {
+  if (e.target.id === 'connOverlay') e.target.hidden = true;
 });
-document.querySelectorAll('#connOverlay .conn-line .btn').forEach(b => b.addEventListener('click', async () => {
-  const text = b.previousElementSibling.textContent;
+
+document.querySelectorAll('#connOverlay .conn-line .btn').forEach(btn => btn.addEventListener('click', async () => {
+  const text = btn.previousElementSibling.textContent;
   try {
-    if (!navigator.clipboard) throw new Error('no clipboard API');
     await navigator.clipboard.writeText(text);
     toast('Copied');
-  } catch (e) {
-    // navigator.clipboard is unavailable outside secure contexts (plain HTTP
-    // on a non-localhost host) — fall back to a hidden textarea + execCommand.
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      toast('Copied');
-    } catch (e2) {
-      toast('Copy failed');
-    }
+  } catch {
+    // navigator.clipboard only exists on HTTPS or localhost; fall back to
+    // the old textarea trick on plain HTTP.
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    toast(ok ? 'Copied' : 'Copy failed');
   }
 }));
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
+// ── Toast & clock ─────────────────────────────────────────────────────────────
 
 function toast(msg) {
-  const t = document.getElementById('toast');
+  const t = $('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ── Clock ─────────────────────────────────────────────────────────────────────
-
 setInterval(() => {
-  document.getElementById('footerTime').textContent = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+  $('footerTime').textContent = new Date().toLocaleTimeString([], { hourCycle: 'h23' });
 }, 1000);
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// ── Sign in ───────────────────────────────────────────────────────────────────
 
 let authRequired = false;
-let setupMode = false;
+let setupMode = false;   // no account exists yet, so the form creates one
 
-// Shows the login form, or the first-run form to create the account if none exists yet.
 async function showLoginOverlay() {
   try {
-    const status = await fetch('/api/auth/status').then(r => r.json());
-    setupMode = !!status.setup_required;
+    setupMode = !!(await (await fetch('/api/auth/status')).json()).setup_required;
   } catch { setupMode = false; }
-  document.getElementById('setupIntro').style.display = setupMode ? 'block' : 'none';
-  document.getElementById('confirmGroup').style.display = setupMode ? 'block' : 'none';
-  document.getElementById('loginConfirm').required = setupMode;
-  document.getElementById('loginPassword').autocomplete = setupMode ? 'new-password' : 'current-password';
-  document.getElementById('loginSubmit').textContent = setupMode ? 'Create account' : 'Sign In';
-  document.getElementById('loginOverlay').classList.add('show');
-}
-
-function showLoginError(msg) {
-  document.getElementById('loginError').textContent = msg;
-  document.getElementById('loginError').classList.add('show');
+  $('setupIntro').hidden = !setupMode;
+  $('confirmGroup').hidden = !setupMode;
+  $('loginConfirm').required = setupMode;
+  $('loginPassword').autocomplete = setupMode ? 'new-password' : 'current-password';
+  $('loginSubmit').textContent = setupMode ? 'Create account' : 'Sign in';
+  $('loginOverlay').hidden = false;
 }
 
 function hideLoginOverlay() {
-  document.getElementById('loginOverlay').classList.remove('show');
-  document.getElementById('loginForm').reset();
-  document.getElementById('loginError').classList.remove('show');
+  $('loginOverlay').hidden = true;
+  $('loginForm').reset();
+  $('loginError').hidden = true;
 }
 
-function showLogoutBtn() {
-  document.getElementById('logoutBtn').style.display = 'flex';
+function showLoginError(msg) {
+  $('loginError').textContent = msg;
+  $('loginError').hidden = false;
 }
 
-function hideLogoutBtn() {
-  document.getElementById('logoutBtn').style.display = 'none';
-}
+// Any 401 means the session has gone; show the sign-in form.
+const originalFetch = window.fetch;
+window.fetch = (...args) => originalFetch(...args).then(res => {
+  if (res.status === 401 && !authRequired) {
+    authRequired = true;
+    disconnectStream();
+    showLoginOverlay();
+  }
+  return res;
+});
 
 async function checkAuthRequired() {
   try {
     const res = await fetch('/api/sources');
-    if (res.status === 401) {
-      authRequired = true;
-      showLoginOverlay();
-    } else {
-      authRequired = false;
-      showLogoutBtn();
+    authRequired = res.status === 401;
+    if (!authRequired) {
+      $('logoutBtn').hidden = false;
       hideLoginOverlay();
     }
   } catch {}
 }
 
-async function doLogin(username, password) {
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const username = $('loginUsername').value;
+  const password = $('loginPassword').value;
+  $('loginError').hidden = true;
+  if (setupMode) {
+    if (password.length < 8) return showLoginError('Password must be at least 8 characters.');
+    if (password !== $('loginConfirm').value) return showLoginError('Passwords don’t match.');
+  }
+
   try {
     const res = await fetch(setupMode ? '/api/setup' : '/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password }),
     });
-
-    if (res.ok) {
-      hideLoginOverlay();
-      authRequired = false;
-      showLogoutBtn();
-      // Re-initialise
-      allEvents = [];
-      document.getElementById('logBody').innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>waiting for events…</td></tr>`;
-      updateCounts(0);
-      historyReady = false;
-      connectStream();
-      refreshSources();
-      await fetchHistory();
-    } else {
-      const error = await res.json().catch(() => ({ error: 'Login failed' }));
-      document.getElementById('loginError').textContent = error.error || 'Invalid credentials';
-      document.getElementById('loginError').classList.add('show');
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return showLoginError(body.error || 'Wrong username or password.');
     }
-  } catch(e) {
-    document.getElementById('loginError').textContent = 'Network error: ' + e.message;
-    document.getElementById('loginError').classList.add('show');
+    authRequired = false;
+    hideLoginOverlay();
+    $('logoutBtn').hidden = false;
+    events = [];
+    showEmpty('Waiting for events…');
+    goLive();
+  } catch (err) {
+    showLoginError('Couldn’t reach the server: ' + err.message);
   }
-}
-
-async function doLogout() {
-  try {
-    await fetch('/api/logout', { method: 'POST' });
-  } catch {}
-  hideLogoutBtn();
-  allEvents = [];
-  document.getElementById('logBody').innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>waiting for login…</td></tr>`;
-  updateCounts(0);
-  disconnectStream();
-  showLoginOverlay();
-}
-
-// Wrap fetch to handle 401
-const originalFetch = window.fetch;
-window.fetch = function(...args) {
-  return originalFetch.apply(this, args).then(res => {
-    if (res.status === 401 && !authRequired) {
-      authRequired = true;
-      showLoginOverlay();
-      disconnectStream();
-    }
-    return res;
-  });
-};
-
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('loginUsername').value;
-  const password = document.getElementById('loginPassword').value;
-  document.getElementById('loginError').classList.remove('show');
-  if (setupMode) {
-    if (password.length < 8) return showLoginError('Password must be at least 8 characters');
-    if (password !== document.getElementById('loginConfirm').value) return showLoginError('Passwords do not match');
-  }
-  await doLogin(username, password);
 });
 
-document.getElementById('logoutBtn').addEventListener('click', doLogout);
+$('logoutBtn').addEventListener('click', async () => {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+  $('logoutBtn').hidden = true;
+  events = [];
+  showEmpty('Signed out.');
+  pause();
+  showLoginOverlay();
+});
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────────────────────
 
+showEmpty('Waiting for events…');
 (async () => {
   await checkAuthRequired();
-  if (!authRequired) {
-    setStatus('', 'connecting');
-    // Run in parallel — the stream buffers events until history has rendered.
-    connectStream();
-    refreshSources();
-    await fetchHistory();
-  }
+  if (!authRequired) goLive();
 })();
 </script>
 </body>

@@ -113,6 +113,11 @@ func (h *Handler) QueryLogs(w http.ResponseWriter, r *http.Request) {
 		since, _ = time.Parse(time.RFC3339, s)
 	}
 
+	var until time.Time
+	if s := q.Get("until"); s != "" {
+		until, _ = time.Parse(time.RFC3339, s)
+	}
+
 	var afterID int64
 	if a := q.Get("after_id"); a != "" {
 		afterID, _ = strconv.ParseInt(a, 10, 64)
@@ -129,8 +134,10 @@ func (h *Handler) QueryLogs(w http.ResponseWriter, r *http.Request) {
 		Level:    q.Get("level"),
 		Search:   q.Get("q"),
 		Since:    since,
+		Until:    until,
 		Limit:    limit,
 		AfterID:  afterID,
+		Asc:      q.Get("order") == "asc",
 	})
 	if err != nil {
 		http.Error(w, "db error", http.StatusInternalServerError)
