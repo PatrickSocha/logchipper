@@ -8,11 +8,13 @@ A self-hosted log collector and viewer. Send logs over syslog or HTTP, then sear
 
 ## Quick start
 
+Using the [`docker-compose.yml`](docker-compose.yml) in this repo:
+
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
-Open http://localhost:7070.
+Open http://localhost:7070. The image, `ghcr.io/patricksocha/logchipper`, is built for amd64 and arm64. To build it yourself: `docker build -t logchipper .`
 
 ## Sending logs
 

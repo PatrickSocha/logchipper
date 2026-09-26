@@ -1,7 +1,6 @@
 services:
   logchipper:
-    build: .
-    image: logchipper:latest
+    image: ghcr.io/patricksocha/logchipper:latest
     ports:
       - "7070:7070"
       - "514:5514/udp"
