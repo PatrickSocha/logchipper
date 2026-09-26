@@ -395,6 +395,7 @@
     transition: background 0.1s;
   }
   tbody tr:hover { background: rgba(255,255,255,0.025); }
+  tbody tr:has(.empty-state) { border-bottom: none; background: none; }
   tbody tr.new-row {
     animation: slideIn 0.2s ease forwards;
   }
@@ -676,6 +677,7 @@
       white-space: normal;
     }
     .td-message { flex: 1 1 100%; margin-top: 2px; }
+    .empty-state { flex: 1 1 100%; }
   }
 
   @media (max-width: 480px) {
