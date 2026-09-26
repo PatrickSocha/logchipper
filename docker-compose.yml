@@ -2,9 +2,12 @@ services:
   logchipper:
     image: ghcr.io/patricksocha/logchipper:latest
     ports:
-      - "7070:7070"
-      - "514:5514/udp"
-      - "514:5514/tcp"
+      # Default: this machine only. To accept logs from your LAN/VPC, set
+      # BIND_IP to this host's private IP (e.g. 192.168.1.10 or 10.0.0.2).
+      # Avoid 0.0.0.0 on hosts with a public IP.
+      - "${BIND_IP:-127.0.0.1}:7070:7070"
+      - "${BIND_IP:-127.0.0.1}:514:5514/udp"
+      - "${BIND_IP:-127.0.0.1}:514:5514/tcp"
     volumes:
       - logchipper-data:/data
     environment:

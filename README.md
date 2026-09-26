@@ -14,7 +14,7 @@ Using the [`docker-compose.yml`](docker-compose.yml) in this repo:
 docker compose up -d
 ```
 
-Open http://localhost:7070. The image, `ghcr.io/patricksocha/logchipper`, is built for amd64 and arm64. To build it yourself: `docker build -t logchipper .`
+Open http://localhost:7070. By default the ports only listen on `127.0.0.1`; see [Network access](#network-access) to accept logs from other machines. The image, `ghcr.io/patricksocha/logchipper`, is built for amd64 and arm64. To build it yourself: `docker build -t logchipper .`
 
 ## Sending logs
 
@@ -49,6 +49,23 @@ Set via environment variables (see `docker-compose.yml`) or flags (`logchipper -
 | `PORT`           | `7070`    | HTTP UI port                                                       |
 
 Size and connection limits are also configurable; run `logchipper -h` for the full list.
+
+## Network access
+
+The compose file binds its ports to `127.0.0.1`, so only the host itself can connect. To accept logs from your LAN or VPC, set `BIND_IP` to the host's private IP in a `.env` file next to `docker-compose.yml`:
+
+```bash
+BIND_IP=10.0.0.2
+```
+
+Why bind to an IP rather than rely on `ACCESS_MODE`:
+
+- Docker publishes ports with its own iptables rules, which bypass ufw/firewalld.
+- Behind Docker Desktop or Docker's userland proxy (e.g. IPv6 traffic), every client appears to come from a private gateway IP, so `ACCESS_MODE=network` lets everyone in.
+
+`ACCESS_MODE` and `ALLOWED_IPS` are still useful as a second layer. To allow only your VPC, use `ACCESS_MODE=internet` with `ALLOWED_IPS=10.0.0.0/16`.
+
+On AWS, GCP and Azure the public IP is NATed to the private one, so binding to the private IP isn't enough: restrict ports 7070 and 514 in the security group/firewall too. On Hetzner Cloud, the private network is a separate interface, so binding to its IP keeps the ports off the internet.
 
 ## Security
 
