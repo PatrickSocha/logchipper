@@ -49,3 +49,21 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Keep latest, every version tag, and the 10 newest sha-* builds; delete the
+  # rest and anything untagged. This action understands multi-arch images, so
+  # it won't delete the per-architecture images that a kept tag points to.
+  cleanup:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          package: logchipper
+          use-regex: true
+          exclude-tags: '^(latest|\d+\.\d+(\.\d+)?)$'
+          keep-n-tagged: 10
+          delete-untagged: true
+          validate: true
