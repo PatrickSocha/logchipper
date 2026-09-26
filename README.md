@@ -2,6 +2,8 @@
 
 A self-hosted log collector and viewer. Send logs over syslog or HTTP, then search and live-tail them in the browser. Single binary, SQLite storage.
 
+![LogChipper demo live-tailing logs](screenshots/logchipper-screen-recording.gif)
+
 ## Quick start
 
 ```bash
