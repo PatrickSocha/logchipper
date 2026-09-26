@@ -14,7 +14,15 @@ Using the [`docker-compose.yml`](docker-compose.yml) in this repo:
 docker compose up -d
 ```
 
-Open http://localhost:7070. By default the ports only listen on `127.0.0.1`; see [Network access](#network-access) to accept logs from other machines. The image, `ghcr.io/patricksocha/logchipper`, is built for amd64 and arm64. To build it yourself: `docker build -t logchipper .`
+Then open http://localhost:7070.
+
+Only this machine can connect by default. To accept logs from other machines, see [Network access](#network-access).
+
+The image (`ghcr.io/patricksocha/logchipper`) is built for amd64 and arm64. To build it yourself:
+
+```bash
+docker build -t logchipper .
+```
 
 ## Sending logs
 
