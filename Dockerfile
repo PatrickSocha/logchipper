@@ -1,11 +1,12 @@
-FROM golang:1.27-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS builder
 
-RUN apk add --no-cache gcc musl-dev git
+ARG TARGETOS TARGETARCH
 
 WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
-RUN go mod tidy && \
-    CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o /logchipper .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o /logchipper .
 
 FROM alpine:3.23
 
