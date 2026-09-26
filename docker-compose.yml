@@ -1,0 +1,27 @@
+services:
+  logchipper:
+    build: .
+    image: logchipper:latest
+    ports:
+      - "7070:7070"
+      - "514:5514/udp"
+      - "514:5514/tcp"
+    volumes:
+      - logchipper-data:/data
+    environment:
+      PORT: "7070"
+      DB_PATH: /data/logchipper.db
+      RETENTION_DAYS: "30"
+      SYSLOG_ADDR: ":5514"    # published as 514 on the host
+      SYSLOG_ENABLE: "true"
+      AUTH: "false"           # true: first visit creates the login
+      ACCESS_MODE: network    # local | network | internet
+      ALLOWED_IPS: ""         # comma-separated IPs/CIDRs
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  logchipper-data:

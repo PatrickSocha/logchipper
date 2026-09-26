@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LogChipper</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LogChipper">
+<meta name="theme-color" content="#0a0c0f">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0c0f;
+    --surface:   #0f1215;
+    --border:    #1e2530;
+    --border2:   #2a3545;
+    --text:      #c8d4e0;
+    --muted:     #4a5568;
+    --accent:    #1b7a43;
+    --accent2:   #145c33;
+    --info:      #00d4ff;
+    --warn:      #f59e0b;
+    --error:     #ef4444;
+    --debug:     #a78bfa;
+    --notice:    #34d399;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 13px;
+    overflow: hidden;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: 48px 1fr auto 52px 32px;
+    height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,12,15,0.95);
+    backdrop-filter: blur(8px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+  .logo-icon { flex: none; border-radius: 50%; }
+  .logo span {
+    color: var(--accent);
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border2);
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .status-dot.live {
+    background: var(--notice);
+    box-shadow: 0 0 6px var(--notice);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stat-chip {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .stat-chip strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    height: 32px;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+  input[type="text"], select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, select:focus {
+    border-color: var(--accent2);
+  }
+  .search-clear {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  .search-clear:hover { color: #fff; }
+  .search-wrap.has-value .search-clear { display: flex; }
+
+  .search-wrap input {
+    width: 100%;
+    padding-left: 32px;
+    padding-right: 26px;
+  }
+  select {
+    padding: 6px 8px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 100px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a5568'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
+  }
+  select option { background: #0f1215; }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--border2); color: #fff; }
+  .btn.active { border-color: #2ecc71; color: #2ecc71; }
+  .btn.danger { border-color: var(--error); color: var(--error); }
+
+  #connOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,12,15,0.85);
+    z-index: 900;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  #connOverlay.show { display: flex; }
+  .conn-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .conn-modal h2 { font-size: 14px; color: #fff; margin-bottom: 16px; }
+  .conn-row { margin-bottom: 14px; }
+  .conn-row label { display: block; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); opacity: 0.6; margin-bottom: 4px; }
+  .conn-row .conn-line { display: flex; gap: 8px; align-items: stretch; }
+  .conn-row code {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg, #0a0c0f);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px 8px;
+    font-size: 11px;
+    overflow-x: auto;
+    white-space: pre;
+    user-select: all;
+  }
+  .conn-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+  .toolbar-sep { width: 1px; height: 20px; background: var(--border); }
+
+  /* LOG TABLE */
+  .log-area {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .log-table-wrap {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .log-table-wrap::-webkit-scrollbar { width: 5px; }
+  .log-table-wrap::-webkit-scrollbar-track { background: var(--bg); }
+  .log-table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* GRAPH */
+  .graph-panel {
+    flex: none;
+    height: 130px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .graph-panel:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+  }
+  .graph-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    flex: none;
+  }
+  .graph-title {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  #graphRange { min-width: 0; }
+  .graph-chart-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .graph-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+  .graph-grid line {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .graph-axis-label {
+    fill: var(--muted);
+    font-size: 9px;
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  }
+  .graph-area { fill: url(#graphFill); }
+  .graph-line {
+    fill: none;
+    stroke: #00d4ff;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .graph-crosshair {
+    stroke: var(--border2);
+    stroke-width: 1;
+    pointer-events: none;
+    display: none;
+  }
+  .graph-hit {
+    fill: transparent;
+    cursor: crosshair;
+  }
+  .graph-tooltip {
+    position: absolute;
+    top: 4px;
+    padding: 4px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text);
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+  .graph-tooltip .t { color: var(--muted); margin-right: 6px; }
+  .graph-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    z-index: 2;
+    user-select: none;
+  }
+
+  col.col-time    { width: 160px; }
+  col.col-level   { width: 70px; }
+  col.col-source  { width: 110px; }
+  col.col-message { width: auto; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(30,37,48,0.5);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.025); }
+  tbody tr.new-row {
+    animation: slideIn 0.2s ease forwards;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; background: rgba(0,212,255,0.06); }
+    to   { opacity: 1; background: transparent; }
+  }
+
+  td {
+    padding: 3px 12px;
+    vertical-align: top;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .td-time {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .level-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 1px 5px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .lvl-info    { color: #2ecc71; background: rgba(46,204,113,0.12);  border: 1px solid rgba(46,204,113,0.3); }
+  .lvl-warn    { color: var(--warn);   background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .lvl-error   { color: var(--error);  background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2); }
+  .lvl-debug   { color: var(--debug);  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); }
+  .lvl-notice  { color: var(--notice); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); }
+
+  .td-source {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .td-source span {
+    cursor: pointer;
+    transition: color 0.1s;
+  }
+  .td-source span:hover { color: var(--accent); }
+
+  .td-message {
+    word-break: break-all;
+    color: var(--text);
+  }
+  .td-message .meta {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+  .empty-state .big { font-size: 32px; opacity: 0.3; margin-bottom: 12px; }
+
+  /* FOOTER */
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  footer .right { margin-left: auto; }
+  footer .search-wrap { flex: 1; max-width: 400px; }
+
+  /* SCROLL-TO-BOTTOM FAB */
+  #scrollBtn {
+    position: absolute;
+    bottom: 40px;
+    right: 24px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 3px;
+    padding: 6px 12px;
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: none;
+    z-index: 10;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 16px rgba(0,212,255,0.3);
+  }
+
+  /* NOTIFICATION TOAST */
+  #toast {
+    position: fixed;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* LOGIN OVERLAY */
+  #loginOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,12,15,0.95);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  #loginOverlay.show {
+    display: flex;
+  }
+
+  .login-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .login-modal h1 {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 24px;
+    margin-bottom: 24px;
+    color: #fff;
+  }
+
+  .login-modal .form-group {
+    margin-bottom: 16px;
+  }
+
+  .login-modal label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .login-modal input[type="text"],
+  .login-modal input[type="password"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .login-modal input[type="text"]:focus,
+  .login-modal input[type="password"]:focus {
+    border-color: var(--accent2);
+  }
+
+  .login-modal .error {
+    color: var(--error);
+    font-size: 12px;
+    margin-top: 12px;
+    display: none;
+  }
+  .login-modal .error.show {
+    display: block;
+  }
+
+  .login-modal .btn-submit {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 3px;
+    padding: 8px;
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: background 0.2s;
+  }
+  .login-modal .btn-submit:hover {
+    background: #00e5ff;
+  }
+
+  #logoutBtn {
+    display: none;
+  }
+
+  /* ── MOBILE ───────────────────────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    /* iOS Safari auto-zooms on focus for any field under 16px */
+    input[type="text"], input[type="password"], select {
+      font-size: 16px;
+    }
+
+    /* toolbar/footer rows now wrap to multiple lines, so their grid row
+       tracks need to grow with them instead of staying pinned at the
+       desktop fixed heights — otherwise wrapped content overflows past
+       the viewport and gets clipped (worse in standalone/home-screen
+       mode, which also needs room for the home-indicator safe area). */
+    #app {
+      height: 100dvh;
+      grid-template-rows: calc(48px + env(safe-area-inset-top)) 1fr auto auto auto;
+    }
+
+    header {
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .toolbar {
+      flex-wrap: wrap;
+      height: auto;
+      padding: 8px 12px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+    .toolbar-sep { display: none; }
+    select { flex: 1 1 45%; min-width: 0; }
+    #connBtn, #clearBtn { display: none; }
+    .graph-panel { height: 110px; }
+
+    /* Only the search box is useful at this width — status text and the
+       clock are redundant with what's already on screen. */
+    footer {
+      height: auto;
+      padding: 8px 12px;
+    }
+    footer .search-wrap { max-width: none; }
+    footer #footerStatus, footer .right { display: none; }
+
+    /* Log rows become stacked cards instead of a fixed-column table */
+    table, thead, tbody, tr, td { display: block; }
+    thead { display: none; }
+    col { width: auto !important; }
+    tbody tr {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+      padding: 8px 12px;
+    }
+    td { padding: 0; }
+    .td-time, .td-source { flex: 0 0 auto; }
+    .td-source {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+    }
+    .td-message { flex: 1 1 100%; margin-top: 2px; }
+  }
+
+  @media (max-width: 480px) {
+    header { padding: 0 12px; gap: 10px; }
+    .logo { font-size: 16px; }
+    .status-pill span { display: none; }
+    .stat-chip { display: none; }
+    .header-right { gap: 8px; }
+
+    #connOverlay, #loginOverlay { padding: 16px; }
+    .conn-modal, .login-modal { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <svg class="logo-icon" width="20" height="20" viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="90" fill="#2e1f15"/>
+        <circle cx="100" cy="100" r="78" fill="#b98a54"/>
+        <circle cx="100" cy="100" r="78" fill="none" stroke="#8f6a3e" stroke-width="6"/>
+        <circle cx="100" cy="100" r="52" fill="none" stroke="#6e4b28" stroke-width="6"/>
+        <circle cx="100" cy="100" r="26" fill="none" stroke="#8f6a3e" stroke-width="5"/>
+        <circle cx="100" cy="100" r="6" fill="#2ecc71"/>
+      </svg>
+      Log<span>Chipper</span>
+    </div>
+    <div class="header-divider"></div>
+    <div class="status-pill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">connecting</span>
+    </div>
+    <div class="header-right">
+      <div class="stat-chip">events: <strong id="totalCount">0</strong></div>
+      <div class="stat-chip">visible: <strong id="visibleCount">0</strong></div>
+      <button class="btn" id="logoutBtn">logout</button>
+    </div>
+  </header>
+
+  <div class="log-area">
+    <div class="log-table-wrap" id="logWrap">
+      <table>
+        <colgroup>
+          <col class="col-time">
+          <col class="col-level">
+          <col class="col-source">
+          <col class="col-message">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>timestamp</th>
+            <th>level</th>
+            <th>source</th>
+            <th>message</th>
+          </tr>
+        </thead>
+        <tbody id="logBody">
+          <tr><td colspan="4" class="empty-state">
+            <div class="big">◈</div>
+            waiting for events&hellip;
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button id="scrollBtn">↓ new events</button>
+  </div>
+
+  <div class="graph-panel" id="graphPanel" hidden>
+    <div class="graph-toolbar">
+      <span class="graph-title" id="graphTitle">events</span>
+      <select id="graphRange">
+        <option value="3600">1 hour</option>
+        <option value="21600">6 hours</option>
+        <option value="86400" selected>24 hours</option>
+        <option value="172800">48 hours</option>
+        <option value="604800">7 days</option>
+      </select>
+    </div>
+    <div class="graph-chart-wrap" id="graphChartWrap">
+      <svg id="graphSvg" class="graph-svg" preserveAspectRatio="none"></svg>
+      <div class="graph-tooltip" id="graphTooltip" hidden></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="filter messages, sources, meta…">
+      <button type="button" id="searchClear" class="search-clear" aria-label="Clear search">&times;</button>
+    </div>
+    <span id="footerStatus">Initialising…</span>
+    <span class="right" id="footerTime"></span>
+  </footer>
+
+  <div class="toolbar">
+    <select id="levelFilter">
+      <option value="">all levels</option>
+      <option value="debug">debug</option>
+      <option value="info">info</option>
+      <option value="notice">notice</option>
+      <option value="warn">warn</option>
+      <option value="error">error</option>
+    </select>
+
+    <select id="sourceFilter">
+      <option value="">all sources</option>
+    </select>
+
+    <div class="toolbar-sep"></div>
+
+    <button class="btn active" id="liveBtn">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+      live
+    </button>
+
+    <button class="btn" id="graphBtn">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 17 9 11 13 15 21 5"/><polyline points="15 5 21 5 21 11"/></svg>
+      graph
+    </button>
+
+    <button class="btn" id="connBtn">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+      connection
+    </button>
+
+    <button class="btn" id="clearBtn">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      clear view
+    </button>
+
+  </div>
+</div>
+
+<div id="loginOverlay">
+  <div class="login-modal">
+    <h1 style="display:flex;align-items:center;gap:10px;">
+      <svg width="28" height="28" viewBox="0 0 200 200" aria-hidden="true" style="border-radius:50%;flex:none;">
+        <circle cx="100" cy="100" r="90" fill="#2e1f15"/>
+        <circle cx="100" cy="100" r="78" fill="#b98a54"/>
+        <circle cx="100" cy="100" r="78" fill="none" stroke="#8f6a3e" stroke-width="6"/>
+        <circle cx="100" cy="100" r="52" fill="none" stroke="#6e4b28" stroke-width="6"/>
+        <circle cx="100" cy="100" r="26" fill="none" stroke="#8f6a3e" stroke-width="5"/>
+        <circle cx="100" cy="100" r="6" fill="#2ecc71"/>
+      </svg>
+      Log<span style="color: var(--accent);">Chipper</span>
+    </h1>
+    <p id="setupIntro" style="display:none;margin:0 0 16px;color:var(--muted);font-size:13px;">Create the account you'll use to sign in.</p>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginUsername">Username</label>
+        <input type="text" id="loginUsername" name="username" required>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" name="password" required>
+      </div>
+      <div class="form-group" id="confirmGroup" style="display:none;">
+        <label for="loginConfirm">Confirm password</label>
+        <input type="password" id="loginConfirm" name="confirm">
+      </div>
+      <div class="error" id="loginError"></div>
+      <button type="submit" class="btn-submit" id="loginSubmit">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<div id="connOverlay">
+  <div class="conn-modal">
+    <h2>Send logs to this server</h2>
+    <div class="conn-row" id="connSyslog">
+      <label>Syslog (UDP/TCP)</label>
+      <div class="conn-line"><code></code><button class="btn" type="button">copy</button></div>
+    </div>
+    <div class="conn-row" id="connHttp">
+      <label>HTTP (JSON)</label>
+      <div class="conn-line"><code></code><button class="btn" type="button">copy</button></div>
+    </div>
+    <div class="conn-actions"><button class="btn" id="connClose" type="button">close</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const MAX_ROWS = 2000;
+
+let allEvents = [];
+let liveMode = true;
+let evtSource = null;
+let filters = { q: '', level: '', source: '' };
+let lastRenderedCount = 0;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function levelClass(l) {
+  const m = { info:'lvl-info', warn:'lvl-warn', error:'lvl-error', debug:'lvl-debug', notice:'lvl-notice' };
+  return m[l] || 'lvl-info';
+}
+
+function fmtTime(ts) {
+  const d = new Date(ts);
+  return d.toISOString().replace('T',' ').replace('Z','').slice(0,23);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Strips a leading "time=... level=..." pair from Go slog text-handler
+// output — the timestamp and level already have their own columns — and
+// unwraps msg="..." into plain text, keeping any trailing key=value attrs.
+function cleanMessage(msg) {
+  const str = String(msg);
+
+  // Go slog JSONHandler output: {"time":"...","level":"INFO","msg":"...",...}
+  // Drop time/level (already their own columns) but keep msg plus any other
+  // structured fields, since those carry real context (ip, id, domain, ...).
+  if (str[0] === '{') {
+    try {
+      const obj = JSON.parse(str);
+      if (obj && typeof obj === 'object' && 'msg' in obj) {
+        const { time, level, msg: text, ...rest } = obj;
+        const extras = Object.entries(rest)
+          .map(([k, v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : v}`)
+          .join(' ');
+        return extras ? `${text}  ${extras}` : text;
+      }
+    } catch {}
+  }
+
+  // Go slog TextHandler output: time=... level=... msg="..." ...
+  const rest = str.replace(/^time=\S+\s+level=\S+\s+/, '');
+  const m = rest.match(/^msg="((?:[^"\\]|\\.)*)"\s*(.*)$/);
+  if (!m) return rest;
+  const text = m[1].replace(/\\"/g, '"');
+  return m[2] ? `${text}  ${m[2]}` : text;
+}
+
+function matchesFilters(e) {
+  if (filters.level && e.level !== filters.level) return false;
+  if (filters.source && e.source !== filters.source) return false;
+  if (filters.q) {
+    const q = filters.q.toLowerCase();
+    const hay = (e.message + e.source + (e.meta||'')).toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function rowHtml(e, isNew) {
+  return `<tr class="${isNew ? 'new-row' : ''}" data-id="${e.id}">
+    <td class="td-time">${fmtTime(e.created_at)}</td>
+    <td><span class="level-badge ${levelClass(e.level)}">${escHtml(e.level)}</span></td>
+    <td class="td-source"><span onclick="filterSource('${escHtml(e.source)}')">${escHtml(e.source||'—')}</span></td>
+    <td class="td-message">${escHtml(cleanMessage(e.message))}${e.meta ? `<span class="meta">${escHtml(e.meta)}</span>` : ''}</td>
+  </tr>`;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function renderAll() {
+  const body = document.getElementById('logBody');
+  const visible = allEvents.filter(matchesFilters);
+
+  if (visible.length === 0) {
+    body.innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>no matching events</td></tr>`;
+    updateCounts(0);
+    return;
+  }
+
+  body.innerHTML = visible.map(e => rowHtml(e, false)).join('');
+  updateCounts(visible.length);
+
+  if (liveMode) scrollToBottom();
+}
+
+// The stream can open before the initial history fetch returns; hold its
+// events until then so the history render doesn't clobber them.
+let historyReady = false;
+const pendingEvents = [];
+
+function appendEvent(e) {
+  if (!historyReady) { pendingEvents.push(e); return; }
+  if (allEvents.length >= MAX_ROWS) allEvents.shift();
+  allEvents.push(e);
+  totalEvents++;
+
+  const body = document.getElementById('logBody');
+  const emptyRow = body.querySelector('.empty-state');
+  if (emptyRow) body.innerHTML = '';
+
+  if (!matchesFilters(e)) {
+    updateCounts();
+    return;
+  }
+
+  body.insertAdjacentHTML('beforeend', rowHtml(e, true));
+
+  // Prune excess DOM rows
+  while (body.rows.length > MAX_ROWS) body.deleteRow(0);
+
+  updateCounts();
+  handleAutoScroll();
+}
+
+let totalEvents = 0;
+
+function updateCounts(visibleOverride) {
+  const visible = visibleOverride !== undefined
+    ? visibleOverride
+    : document.getElementById('logBody').querySelectorAll('tr[data-id]').length;
+  document.getElementById('totalCount').textContent = totalEvents;
+  document.getElementById('visibleCount').textContent = visible;
+}
+
+// ── Scroll ────────────────────────────────────────────────────────────────────
+
+const wrap = document.getElementById('logWrap');
+const scrollBtn = document.getElementById('scrollBtn');
+
+// Sticky follow-state, not a per-event pixel recheck: a single stale
+// scrollHeight/scrollTop reading (plausible with the delayed reflow
+// browsers do in backgrounded tabs) would otherwise permanently flip
+// auto-follow off with nothing to self-correct it afterward. Only a
+// genuine user-initiated scroll away from the bottom should break it.
+let followBottom = true;
+let programmaticScroll = false;
+
+function scrollToBottom() {
+  // Instant, not CSS scroll-behavior:smooth — a smooth scroll animates via
+  // requestAnimationFrame, which browsers throttle/pause in unfocused tabs,
+  // so live auto-follow would visibly stall whenever the window loses focus.
+  programmaticScroll = true;
+  wrap.scrollTop = wrap.scrollHeight;
+  scrollBtn.style.display = 'none';
+  followBottom = true;
+}
+
+function handleAutoScroll() {
+  if (liveMode && followBottom) {
+    scrollToBottom();
+  } else {
+    scrollBtn.style.display = 'block';
+  }
+}
+
+wrap.addEventListener('scroll', () => {
+  if (programmaticScroll) { programmaticScroll = false; return; }
+  const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 40;
+  followBottom = atBottom;
+  if (atBottom) scrollBtn.style.display = 'none';
+  if (wrap.scrollTop < 200) fetchOlder();
+});
+
+scrollBtn.addEventListener('click', scrollToBottom);
+
+// ── SSE Stream ────────────────────────────────────────────────────────────────
+
+function connectStream() {
+  if (evtSource) evtSource.close();
+
+  evtSource = new EventSource('/api/stream');
+
+  evtSource.onopen = () => {
+    setStatus('live', 'live');
+    refreshDbSize();
+  };
+
+  evtSource.onmessage = (ev) => {
+    try {
+      const e = JSON.parse(ev.data);
+      appendEvent(e);
+      refreshSources();
+    } catch {}
+  };
+
+  evtSource.onerror = () => {
+    setStatus('error', 'reconnecting');
+    setFooter('Connection lost, retrying…');
+  };
+}
+
+function disconnectStream() {
+  if (evtSource) { evtSource.close(); evtSource = null; }
+  setStatus('paused', 'paused');
+  setFooter('Live stream paused');
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+
+function setStatus(cls, text) {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot';
+  if (cls === 'live') dot.classList.add('live');
+  txt.textContent = text;
+}
+
+function fmtBytes(n) {
+  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return (i ? n.toFixed(1) : n) + ' ' + u[i];
+}
+
+async function refreshDbSize() {
+  try {
+    const res = await fetch('/api/dbsize');
+    const { bytes, events } = await res.json();
+    totalEvents = events;
+    updateCounts();
+    setFooter('Database size: ' + fmtBytes(bytes));
+  } catch {}
+}
+setInterval(() => { if (evtSource) refreshDbSize(); }, 30000);
+
+function setFooter(msg) {
+  document.getElementById('footerStatus').textContent = msg;
+}
+
+// ── Fetch history ─────────────────────────────────────────────────────────────
+
+const HISTORY_PAGE = 500;
+let reachedStart = false;
+let loadingOlder = false;
+
+// Loads the next page of older events when the user scrolls near the top,
+// keeping the viewport anchored on the same rows.
+async function fetchOlder() {
+  if (loadingOlder || reachedStart || !allEvents.length) return;
+  loadingOlder = true;
+  try {
+    const params = buildLogParams();
+    params.set('before_id', allEvents[0].id);
+    const res = await fetch('/api/logs?' + params);
+    const older = ((await res.json()) || []).slice().reverse();
+    if (older.length < HISTORY_PAGE) reachedStart = true;
+    if (!older.length) return;
+
+    const body = document.getElementById('logBody');
+    const prevHeight = wrap.scrollHeight;
+    const prevTop = wrap.scrollTop;
+    allEvents = older.concat(allEvents);
+    body.insertAdjacentHTML('afterbegin', older.filter(matchesFilters).map(e => rowHtml(e, false)).join(''));
+    programmaticScroll = true;
+    wrap.scrollTop = prevTop + (wrap.scrollHeight - prevHeight);
+    updateCounts();
+  } catch(e) {
+    setFooter('Failed to load older events: ' + e.message);
+  } finally {
+    loadingOlder = false;
+  }
+}
+
+function buildLogParams() {
+  const params = new URLSearchParams({ limit: HISTORY_PAGE });
+  if (filters.level) params.set('level', filters.level);
+  if (filters.source) params.set('source', filters.source);
+  if (filters.q) params.set('q', filters.q);
+  return params;
+}
+
+// Queries the server for events matching the current filters — search runs
+// against the full database (SQL LIKE), not just whatever's already loaded
+// in the browser, so it can find matches beyond the last 500/2000 rows.
+async function fetchHistory() {
+  try {
+    const res = await fetch('/api/logs?' + buildLogParams());
+    const data = await res.json();
+
+    allEvents = (data || []).slice().reverse(); // API returns newest first
+    reachedStart = allEvents.length < HISTORY_PAGE;
+    renderAll();
+  } catch(e) {
+    setFooter('Failed to fetch history: ' + e.message);
+  } finally {
+    historyReady = true;
+    const lastId = allEvents.length ? allEvents[allEvents.length - 1].id : 0;
+    pendingEvents.splice(0).filter(e => e.id > lastId).forEach(appendEvent);
+  }
+}
+
+async function refreshSources() {
+  try {
+    const res = await fetch('/api/sources');
+    const sources = await res.json();
+    const sel = document.getElementById('sourceFilter');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">all sources</option>' +
+      (sources||[]).map(s => `<option value="${escHtml(s)}" ${s===current?'selected':''}>${escHtml(s)}</option>`).join('');
+  } catch {}
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+
+document.getElementById('liveBtn').addEventListener('click', () => {
+  liveMode = !liveMode;
+  const btn = document.getElementById('liveBtn');
+  if (liveMode) {
+    btn.classList.add('active');
+    connectStream();
+  } else {
+    btn.classList.remove('active');
+    disconnectStream();
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  allEvents = [];
+  document.getElementById('logBody').innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>view cleared</td></tr>`;
+  updateCounts(0);
+});
+
+const searchInput = document.getElementById('searchInput');
+const searchWrap = document.querySelector('.search-wrap');
+const searchClear = document.getElementById('searchClear');
+
+function updateSearchClear() {
+  searchWrap.classList.toggle('has-value', !!searchInput.value);
+}
+
+let searchDebounce = null;
+
+searchInput.addEventListener('input', function() {
+  filters.q = this.value;
+  updateSearchClear();
+  // Debounced — search now queries the database (SQL LIKE) instead of just
+  // filtering whatever's already loaded, so it's a real network+SQL round
+  // trip and not worth doing on every keystroke.
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    fetchHistory();
+    refreshGraphIfOpen();
+  }, 400);
+});
+
+// Plain <input> outside a <form> shouldn't do anything on Enter, but some
+// mobile keyboards' "search"/"go" key still triggers a native action that
+// leaves the field in a bad state (cursor resets to 0 on refocus) — block it.
+searchInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') e.preventDefault();
+});
+
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  filters.q = '';
+  updateSearchClear();
+  clearTimeout(searchDebounce);
+  fetchHistory();
+  searchInput.focus();
+  refreshGraphIfOpen();
+});
+
+document.getElementById('levelFilter').addEventListener('change', function() {
+  filters.level = this.value;
+  fetchHistory();
+  refreshGraphIfOpen();
+});
+
+document.getElementById('sourceFilter').addEventListener('change', function() {
+  filters.source = this.value;
+  fetchHistory();
+  refreshGraphIfOpen();
+});
+
+function filterSource(src) {
+  filters.source = src;
+  document.getElementById('sourceFilter').value = src;
+  fetchHistory();
+  refreshGraphIfOpen();
+}
+
+// ── Graph ─────────────────────────────────────────────────────────────────────
+// Server-aggregated (SQL GROUP BY) — the client only ever holds one small
+// array of {t, count} buckets, never raw events, regardless of time range.
+
+let graphOpen = false;
+let graphRefreshTimer = null;
+
+const graphPanel = document.getElementById('graphPanel');
+const graphSvg = document.getElementById('graphSvg');
+const graphTooltip = document.getElementById('graphTooltip');
+const graphRangeSel = document.getElementById('graphRange');
+
+const NICE_BUCKETS = [10, 30, 60, 300, 600, 900, 1800, 3600, 2*3600, 3*3600, 6*3600, 12*3600, 24*3600];
+
+function pickBucketSeconds(rangeSeconds, targetPoints = 120) {
+  const raw = rangeSeconds / targetPoints;
+  for (const b of NICE_BUCKETS) if (b >= raw) return b;
+  return NICE_BUCKETS[NICE_BUCKETS.length - 1];
+}
+
+function fmtBucketTime(unixSeconds, rangeSeconds) {
+  const d = new Date(unixSeconds * 1000);
+  return rangeSeconds > 3 * 86400
+    ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+function setGraphTitle() {
+  const parts = [];
+  if (filters.level) parts.push(filters.level);
+  if (filters.source) parts.push(filters.source);
+  if (filters.q) parts.push('"' + filters.q + '"');
+  document.getElementById('graphTitle').textContent = parts.length ? parts.join(' · ') : 'all events';
+}
+
+async function fetchHistogram() {
+  const rangeSeconds = parseInt(graphRangeSel.value, 10);
+  const bucketSeconds = pickBucketSeconds(rangeSeconds);
+  const since = new Date(Date.now() - rangeSeconds * 1000).toISOString();
+  const params = new URLSearchParams({ since, bucket_seconds: bucketSeconds });
+  if (filters.level) params.set('level', filters.level);
+  if (filters.source) params.set('source', filters.source);
+  if (filters.q) params.set('q', filters.q);
+
+  try {
+    const res = await fetch('/api/logs/histogram?' + params);
+    const data = await res.json();
+    renderGraph(data, rangeSeconds);
+  } catch (e) {
+    graphSvg.innerHTML = '';
+  }
+}
+
+function renderGraph(data, rangeSeconds) {
+  const bucketSeconds = data.bucket_seconds;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const sinceSec = Math.floor(new Date(data.since).getTime() / 1000);
+
+  // Fill in explicit zero counts for empty buckets so the line doesn't skip gaps.
+  const counts = new Map((data.buckets || []).map(b => [b.t, b.count]));
+  const points = [];
+  const start = Math.floor(sinceSec / bucketSeconds) * bucketSeconds;
+  for (let t = start; t <= nowSec; t += bucketSeconds) {
+    points.push({ t, count: counts.get(t) || 0 });
+  }
+
+  // viewBox matches the SVG's real rendered pixel size (not a fixed 1000x200
+  // coordinate space) so padding/font-size stay true pixel sizes regardless
+  // of panel height — a mismatched viewBox scale otherwise squashes text.
+  const rect = graphSvg.getBoundingClientRect();
+  const W = Math.max(rect.width, 100), H = Math.max(rect.height, 60);
+  const padL = 30, padR = 6, padT = 10, padB = 18;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const maxCount = Math.max(1, ...points.map(p => p.count));
+  const yMax = maxCount <= 4 ? maxCount + 1 : Math.ceil(maxCount * 1.15);
+
+  const xAt = i => padL + (points.length <= 1 ? 0 : (i / (points.length - 1)) * plotW);
+  const yAt = c => padT + plotH - (c / yMax) * plotH;
+
+  let linePath = '';
+  points.forEach((p, i) => {
+    linePath += `${i === 0 ? 'M' : 'L'}${xAt(i).toFixed(1)},${yAt(p.count).toFixed(1)} `;
+  });
+  linePath = linePath.trim();
+  const baseline = (padT + plotH).toFixed(1);
+  const areaPath = `${linePath} L${xAt(points.length - 1).toFixed(1)},${baseline} L${xAt(0).toFixed(1)},${baseline} Z`;
+
+  const yTicks = [...new Set([0, Math.round(yMax / 2), yMax])];
+  let gridLines = '', yLabels = '';
+  yTicks.forEach(v => {
+    const gy = yAt(v);
+    gridLines += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W - padR}" y2="${gy.toFixed(1)}"/>`;
+    yLabels += `<text class="graph-axis-label" x="${padL - 6}" y="${(gy + 3).toFixed(1)}" text-anchor="end">${v}</text>`;
+  });
+
+  const xTickCount = Math.min(6, points.length);
+  let xLabels = '';
+  for (let i = 0; i < xTickCount; i++) {
+    const idx = Math.round((i / (xTickCount - 1 || 1)) * (points.length - 1));
+    const p = points[idx];
+    if (!p) continue;
+    const anchor = i === 0 ? 'start' : (i === xTickCount - 1 ? 'end' : 'middle');
+    xLabels += `<text class="graph-axis-label" x="${xAt(idx).toFixed(1)}" y="${H - 4}" text-anchor="${anchor}">${escHtml(fmtBucketTime(p.t, rangeSeconds))}</text>`;
+  }
+
+  if (points.length && maxCount === 0 && !(data.buckets || []).length) {
+    // still render the (flat) axes — an all-zero graph is informative too
+  }
+
+  graphSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  graphSvg.innerHTML = `
+    <defs>
+      <linearGradient id="graphFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <g class="graph-grid">${gridLines}</g>
+    ${yLabels}${xLabels}
+    <path class="graph-area" d="${areaPath}"/>
+    <path class="graph-line" d="${linePath}"/>
+    <line class="graph-crosshair" id="graphCrosshair" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}"/>
+    <rect class="graph-hit" x="${padL}" y="${padT}" width="${Math.max(plotW,0)}" height="${Math.max(plotH,0)}"/>
+  `;
+
+  graphSvg.__points = points;
+  graphSvg.__scale = { padL, plotW, W };
+}
+
+function graphPointerMove(evt) {
+  const points = graphSvg.__points;
+  if (!points || !points.length) return;
+  const scale = graphSvg.__scale;
+  const rect = graphSvg.getBoundingClientRect();
+  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+  const relX = (clientX - rect.left) / rect.width * scale.W;
+  const frac = Math.max(0, Math.min(1, (relX - scale.padL) / scale.plotW));
+  const idx = Math.round(frac * (points.length - 1));
+  const p = points[idx];
+  if (!p) return;
+
+  const px = scale.padL + (points.length <= 1 ? 0 : (idx / (points.length - 1)) * scale.plotW);
+  const crosshair = document.getElementById('graphCrosshair');
+  crosshair.setAttribute('x1', px);
+  crosshair.setAttribute('x2', px);
+  crosshair.style.display = 'block';
+
+  graphTooltip.hidden = false;
+  graphTooltip.style.left = (px / scale.W * 100) + '%';
+  graphTooltip.innerHTML = `<span class="t">${escHtml(new Date(p.t * 1000).toLocaleString())}</span>${p.count}`;
+}
+
+function graphPointerLeave() {
+  const crosshair = document.getElementById('graphCrosshair');
+  if (crosshair) crosshair.style.display = 'none';
+  graphTooltip.hidden = true;
+}
+
+graphSvg.addEventListener('mousemove', graphPointerMove);
+graphSvg.addEventListener('mouseleave', graphPointerLeave);
+graphSvg.addEventListener('touchmove', graphPointerMove, { passive: true });
+graphSvg.addEventListener('touchend', graphPointerLeave);
+
+function refreshGraphIfOpen() {
+  if (!graphOpen) return;
+  setGraphTitle();
+  fetchHistogram();
+}
+
+function setGraphOpen(open) {
+  graphOpen = open;
+  document.getElementById('graphBtn').classList.toggle('active', graphOpen);
+  graphPanel.hidden = !graphOpen;
+  if (graphOpen) {
+    setGraphTitle();
+    fetchHistogram();
+    graphRefreshTimer = setInterval(() => { if (liveMode) fetchHistogram(); }, 20000);
+  } else if (graphRefreshTimer) {
+    clearInterval(graphRefreshTimer);
+    graphRefreshTimer = null;
+  }
+}
+
+document.getElementById('graphBtn').addEventListener('click', () => setGraphOpen(!graphOpen));
+
+graphRangeSel.addEventListener('change', () => { if (graphOpen) fetchHistogram(); });
+
+// Open by default on desktop (matches the 700px mobile breakpoint) — mobile
+// starts collapsed since screen space is tighter there.
+if (window.matchMedia('(min-width: 701px)').matches) setGraphOpen(true);
+
+// ── Connection strings ────────────────────────────────────────────────────────
+
+async function showConnection() {
+  let cfg = {};
+  try { cfg = await (await fetch('/api/config')).json(); } catch (e) {}
+  const host = location.hostname;
+  const fill = (id, text) => {
+    const row = document.getElementById(id);
+    row.style.display = text ? '' : 'none';
+    if (text) row.querySelector('code').textContent = text;
+  };
+  fill('connSyslog', cfg.syslog_enabled && cfg.syslog_port ? `${host}:${cfg.syslog_port}` : '');
+  const auth = cfg.ingest_token_enabled ? ` -H "Authorization: Bearer <INGEST_TOKEN>"` : '';
+  fill('connHttp', `curl -X POST ${location.origin}/api/logs -H "Content-Type: application/json"${auth} -d '{"source":"my-app","level":"info","message":"hello"}'`);
+  document.getElementById('connOverlay').classList.add('show');
+}
+
+document.getElementById('connBtn').addEventListener('click', showConnection);
+document.getElementById('connClose').addEventListener('click', () => document.getElementById('connOverlay').classList.remove('show'));
+document.getElementById('connOverlay').addEventListener('click', e => {
+  if (e.target.id === 'connOverlay') e.target.classList.remove('show');
+});
+document.querySelectorAll('#connOverlay .conn-line .btn').forEach(b => b.addEventListener('click', async () => {
+  const text = b.previousElementSibling.textContent;
+  try {
+    if (!navigator.clipboard) throw new Error('no clipboard API');
+    await navigator.clipboard.writeText(text);
+    toast('Copied');
+  } catch (e) {
+    // navigator.clipboard is unavailable outside secure contexts (plain HTTP
+    // on a non-localhost host) — fall back to a hidden textarea + execCommand.
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('Copied');
+    } catch (e2) {
+      toast('Copy failed');
+    }
+  }
+}));
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+
+setInterval(() => {
+  document.getElementById('footerTime').textContent = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+}, 1000);
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+let authRequired = false;
+let setupMode = false;
+
+// Shows the login form, or the first-run form to create the account if none exists yet.
+async function showLoginOverlay() {
+  try {
+    const status = await fetch('/api/auth/status').then(r => r.json());
+    setupMode = !!status.setup_required;
+  } catch { setupMode = false; }
+  document.getElementById('setupIntro').style.display = setupMode ? 'block' : 'none';
+  document.getElementById('confirmGroup').style.display = setupMode ? 'block' : 'none';
+  document.getElementById('loginConfirm').required = setupMode;
+  document.getElementById('loginPassword').autocomplete = setupMode ? 'new-password' : 'current-password';
+  document.getElementById('loginSubmit').textContent = setupMode ? 'Create account' : 'Sign In';
+  document.getElementById('loginOverlay').classList.add('show');
+}
+
+function showLoginError(msg) {
+  document.getElementById('loginError').textContent = msg;
+  document.getElementById('loginError').classList.add('show');
+}
+
+function hideLoginOverlay() {
+  document.getElementById('loginOverlay').classList.remove('show');
+  document.getElementById('loginForm').reset();
+  document.getElementById('loginError').classList.remove('show');
+}
+
+function showLogoutBtn() {
+  document.getElementById('logoutBtn').style.display = 'flex';
+}
+
+function hideLogoutBtn() {
+  document.getElementById('logoutBtn').style.display = 'none';
+}
+
+async function checkAuthRequired() {
+  try {
+    const res = await fetch('/api/sources');
+    if (res.status === 401) {
+      authRequired = true;
+      showLoginOverlay();
+    } else {
+      authRequired = false;
+      showLogoutBtn();
+      hideLoginOverlay();
+    }
+  } catch {}
+}
+
+async function doLogin(username, password) {
+  try {
+    const res = await fetch(setupMode ? '/api/setup' : '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    if (res.ok) {
+      hideLoginOverlay();
+      authRequired = false;
+      showLogoutBtn();
+      // Re-initialise
+      allEvents = [];
+      document.getElementById('logBody').innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>waiting for events…</td></tr>`;
+      updateCounts(0);
+      historyReady = false;
+      connectStream();
+      refreshSources();
+      await fetchHistory();
+    } else {
+      const error = await res.json().catch(() => ({ error: 'Login failed' }));
+      document.getElementById('loginError').textContent = error.error || 'Invalid credentials';
+      document.getElementById('loginError').classList.add('show');
+    }
+  } catch(e) {
+    document.getElementById('loginError').textContent = 'Network error: ' + e.message;
+    document.getElementById('loginError').classList.add('show');
+  }
+}
+
+async function doLogout() {
+  try {
+    await fetch('/api/logout', { method: 'POST' });
+  } catch {}
+  hideLogoutBtn();
+  allEvents = [];
+  document.getElementById('logBody').innerHTML = `<tr><td colspan="4" class="empty-state"><div class="big">◈</div>waiting for login…</td></tr>`;
+  updateCounts(0);
+  disconnectStream();
+  showLoginOverlay();
+}
+
+// Wrap fetch to handle 401
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+  return originalFetch.apply(this, args).then(res => {
+    if (res.status === 401 && !authRequired) {
+      authRequired = true;
+      showLoginOverlay();
+      disconnectStream();
+    }
+    return res;
+  });
+};
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value;
+  const password = document.getElementById('loginPassword').value;
+  document.getElementById('loginError').classList.remove('show');
+  if (setupMode) {
+    if (password.length < 8) return showLoginError('Password must be at least 8 characters');
+    if (password !== document.getElementById('loginConfirm').value) return showLoginError('Passwords do not match');
+  }
+  await doLogin(username, password);
+});
+
+document.getElementById('logoutBtn').addEventListener('click', doLogout);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+(async () => {
+  await checkAuthRequired();
+  if (!authRequired) {
+    setStatus('', 'connecting');
+    // Run in parallel — the stream buffers events until history has rendered.
+    connectStream();
+    refreshSources();
+    await fetchHistory();
+  }
+})();
+</script>
+</body>
+</html>

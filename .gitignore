@@ -1,0 +1,16 @@
+/logchipper.db
+/logchipper.db-shm
+/logchipper.db-wal
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+
+# Editor / tooling
+.idea/
+.claude/
+.zed/
