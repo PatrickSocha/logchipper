@@ -54,7 +54,7 @@ func main() {
 	dbPath := flag.String("db", envOr("DB_PATH", "./logchipper.db"), "SQLite database path")
 	port := flag.String("port", envOr("PORT", "8080"), "HTTP port")
 	syslogAddr := flag.String("syslog", envOr("SYSLOG_ADDR", ":514"), "Syslog UDP+TCP listen address")
-	authEnabled := flag.Bool("auth", envOr("AUTH", "false") == "true", "Require a login; the first visit asks you to create the account")
+	authEnabled := flag.Bool("auth", envOr("AUTH", "true") != "false", "Require a login; the first visit asks you to create the account")
 	ingestToken := flag.String("ingest-token", envOr("INGEST_TOKEN", ""), "Bearer token required for HTTP log ingest (POST /api/logs, /api/logs/text); empty = ingest follows UI login")
 	allowedIPs := flag.String("allowed-ips", envOr("ALLOWED_IPS", ""), "Comma-separated IPs/CIDRs allowed in addition to the access mode (with internet: only these)")
 	retentionDays := flag.Int("retention", 0, "Days to retain logs (0 = use RETENTION_DAYS env, default 30)")
