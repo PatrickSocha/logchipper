@@ -71,8 +71,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           package: logchipper
-          use-regex: true
-          exclude-tags: '^(latest|\d+\.\d+(\.\d+)?)$'
+          # Version tags (1.2.3, 1.2) contain a dot; sha-* tags never do.
+          exclude-tags: "latest,*.*"
           keep-n-tagged: 10
           delete-untagged: true
           validate: true
