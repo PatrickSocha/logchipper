@@ -815,7 +815,7 @@ function matchesFilters(e) {
 function rowHtml(e, isNew = false) {
   const d = new Date(e.created_at);
   const meta = e.meta ? `<span class="meta">${escHtml(e.meta)}</span>` : '';
-  return `<tr class="${isNew ? 'new-row' : ''}" data-id="${e.id}">
+  return `<tr class="${isNew ? 'new-row' : ''}" data-id="${e.id}" data-t="${d.getTime()}">
     <td class="td-time" title="${escHtml(d.toString())}">${timeHtml(e.created_at)}</td>
     <td><span class="level-badge ${levelClass(e.level)}">${escHtml(e.level)}</span></td>
     <td class="td-source"><span class="source-link" data-source="${escHtml(e.source)}" title="Show only this source">${escHtml(e.source || '—')}</span></td>
@@ -837,6 +837,7 @@ function renderAll() {
   logBody.innerHTML = visible.map(e => rowHtml(e)).join('');
   updateCounts(visible.length);
   if (!anchor) scrollToBottom();
+  scheduleViewTimeUpdate();
 }
 
 function updateCounts(visible = logBody.querySelectorAll('tr[data-id]').length) {
@@ -879,11 +880,18 @@ logBody.addEventListener('click', e => {
 // the bottom turns it off — re-measuring on every event would flip it off by
 // mistake when a background tab reports stale layout sizes.
 let followBottom = true;
-let programmaticScroll = false;
+
+// Where the page last scrolled itself to. Scroll events landing there are
+// ours, not the user's, so they don't change followBottom.
+let programmaticTop = null;
 
 function setScrollTop(top) {
-  programmaticScroll = true;
   wrap.scrollTop = top;
+  programmaticTop = wrap.scrollTop;
+}
+
+function isAtBottom() {
+  return wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 40;
 }
 
 // Jumps instantly rather than smooth-scrolling: smooth scrolling pauses in
@@ -895,14 +903,43 @@ function scrollToBottom() {
 }
 
 wrap.addEventListener('scroll', () => {
-  if (programmaticScroll) { programmaticScroll = false; return; }
-  const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 40;
+  scheduleViewTimeUpdate();
+  if (wrap.scrollTop === programmaticTop) return;
+  programmaticTop = null;
+  const atBottom = isAtBottom();
   followBottom = atBottom;
-  if (atBottom) { scrollBtn.hidden = true; fetchNewer(); }
+  if (atBottom) {
+    scrollBtn.hidden = true;
+    // Scrolled off the end of the history view: carry on live from here.
+    if (anchor && reachedEnd) goLive({ keepRows: true });
+    else fetchNewer();
+  }
   if (wrap.scrollTop < 200) fetchOlder();
 });
 
 scrollBtn.addEventListener('click', scrollToBottom);
+
+// The time of the row in the middle of the log view, shown as the dashed line
+// on the graph. Hidden while following live at the bottom, since the graph's
+// right edge already is "now".
+let viewTime = null;
+let viewTimeFrame = 0;
+
+function scheduleViewTimeUpdate() {
+  if (!viewTimeFrame) viewTimeFrame = requestAnimationFrame(updateViewTime);
+}
+
+function updateViewTime() {
+  viewTimeFrame = 0;
+  viewTime = null;
+  if (anchor || !followBottom) {
+    const rect = wrap.getBoundingClientRect();
+    const row = document.elementFromPoint(rect.left + 20, rect.top + wrap.clientHeight / 2)?.closest('tr[data-t]');
+    if (row) viewTime = new Date(+row.dataset.t);
+  }
+  if (anchor && viewTime) $('historyText').textContent = `Showing logs from around ${fmtMoment(viewTime)}`;
+  placeGraphMarker();
+}
 
 // ── Loading events ────────────────────────────────────────────────────────────
 // Filters and search run on the server, so they cover the whole database,
@@ -931,12 +968,34 @@ async function loadLatest() {
   } catch (e) {
     if (seq === loadSeq) setFooter('Couldn’t load events: ' + e.message);
   } finally {
-    if (seq === loadSeq) {
-      historyReady = true;
-      const lastId = events.length ? events[events.length - 1].id : 0;
-      pendingEvents.splice(0).filter(e => e.id > lastId).forEach(appendEvent);
-    }
+    if (seq === loadSeq) flushPending();
   }
+}
+
+// Adds whatever arrived after the last event on screen, then scrolls down to
+// it. Starts afresh if it's more than a page behind.
+async function catchUp() {
+  const seq = ++loadSeq;
+  try {
+    const newer = await getLogs({ after_id: events[events.length - 1].id, order: 'asc' });
+    if (seq !== loadSeq) return;
+    if (newer.length === PAGE) return loadLatest();
+    events = events.concat(newer);
+    logBody.insertAdjacentHTML('beforeend', newer.filter(matchesFilters).map(e => rowHtml(e)).join(''));
+    updateCounts();
+    scrollToBottom();
+  } catch (e) {
+    if (seq === loadSeq) setFooter('Couldn’t load events: ' + e.message);
+  } finally {
+    if (seq === loadSeq) flushPending();
+  }
+}
+
+// Lets through the live events held back while a load was in progress.
+function flushPending() {
+  historyReady = true;
+  const lastId = events.length ? events[events.length - 1].id : 0;
+  pendingEvents.splice(0).filter(e => e.id > lastId).forEach(appendEvent);
 }
 
 // Half a page either side of the anchor time, scrolled so the first event at
@@ -1008,6 +1067,7 @@ async function fetchNewer() {
   } finally {
     loadingMore = false;
   }
+  if (anchor && reachedEnd && isAtBottom()) goLive({ keepRows: true });
 }
 
 function reload() {
@@ -1046,8 +1106,9 @@ function disconnectStream() {
   if (stream) { stream.close(); stream = null; }
 }
 
-// Back to the newest events with the live stream on.
-function goLive() {
+// Back to the newest events with the live stream on. With keepRows, the
+// events on screen stay and only newer ones are fetched.
+function goLive({ keepRows = false } = {}) {
   anchor = null;
   liveMode = true;
   $('liveBtn').classList.add('active');
@@ -1056,7 +1117,12 @@ function goLive() {
   setStatus('', 'Connecting…');
   connectStream();
   refreshSources();
-  reload();
+  if (keepRows && events.length) {
+    catchUp();
+    refreshGraph();
+  } else {
+    reload();
+  }
 }
 
 function pause() {
@@ -1082,7 +1148,7 @@ function jumpTo(t) {
 }
 
 $('liveBtn').addEventListener('click', () => liveMode ? pause() : goLive());
-$('backToLiveBtn').addEventListener('click', goLive);
+$('backToLiveBtn').addEventListener('click', () => goLive());
 
 // ── Status ────────────────────────────────────────────────────────────────────
 
@@ -1265,16 +1331,6 @@ function renderGraph(data, rangeSeconds) {
     labels += `<text class="graph-axis-label" x="${xAt(idx).toFixed(1)}" y="${H - 4}" text-anchor="${anchorPos}">${escHtml(fmtAxisTime(points[idx].t, rangeSeconds))}</text>`;
   }
 
-  // Dashed line at the time the log view is pinned to, if it's on this graph.
-  let marker = '';
-  if (anchor && points.length > 1) {
-    const i = (anchor.getTime() / 1000 - start) / bucketSeconds;
-    if (i >= 0 && i <= points.length - 1) {
-      const x = xAt(i).toFixed(1);
-      marker = `<line class="graph-marker" x1="${x}" y1="${padT}" x2="${x}" y2="${baseline}"/>`;
-    }
-  }
-
   graphSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   graphSvg.innerHTML = `
     <defs>
@@ -1287,12 +1343,30 @@ function renderGraph(data, rangeSeconds) {
     ${labels}
     <path class="graph-area" d="${areaPath}"/>
     <path class="graph-line" d="${linePath}"/>
-    ${marker}
+    <line class="graph-marker" id="graphMarker" y1="${padT}" y2="${baseline}" display="none"/>
     <line class="graph-crosshair" id="graphCrosshair" x1="${padL}" y1="${padT}" x2="${padL}" y2="${baseline}" display="none"/>
     <rect class="graph-hit" x="${padL}" y="${padT}" width="${Math.max(plotW, 0)}" height="${Math.max(plotH, 0)}"/>
   `;
 
-  graph = { points, bucketSeconds, padL, plotW, W };
+  graph = { points, bucketSeconds, padL, plotW, W, start, xAt };
+  placeGraphMarker();
+}
+
+// Moves the dashed line to viewTime, or hides it if that's off the graph.
+function placeGraphMarker() {
+  const marker = $('graphMarker');
+  if (!marker) return;
+  const i = viewTime && graph.points.length > 1
+    ? (viewTime.getTime() / 1000 - graph.start) / graph.bucketSeconds
+    : -1;
+  if (i < 0 || i > graph.points.length - 1) {
+    marker.setAttribute('display', 'none');
+    return;
+  }
+  const x = graph.xAt(i).toFixed(1);
+  marker.setAttribute('x1', x);
+  marker.setAttribute('x2', x);
+  marker.removeAttribute('display');
 }
 
 // The bucket under the pointer and its x position in the SVG.
