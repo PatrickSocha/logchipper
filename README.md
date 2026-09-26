@@ -52,10 +52,13 @@ Size and connection limits are also configurable; run `logchipper -h` for the fu
 
 ## Network access
 
-The compose file binds its ports to `127.0.0.1`, so only the host itself can connect. To accept logs from your LAN or VPC, set `BIND_IP` to the host's private IP in a `.env` file next to `docker-compose.yml`:
+The compose file binds its ports to `127.0.0.1`, so only the host itself can connect. To accept logs from your LAN or VPC, replace `127.0.0.1` in the `ports` section with the host's private IP:
 
-```bash
-BIND_IP=10.0.0.2
+```yaml
+ports:
+  - "10.0.0.2:7070:7070"
+  - "10.0.0.2:514:5514/udp"
+  - "10.0.0.2:514:5514/tcp"
 ```
 
 Why bind to an IP rather than rely on `ACCESS_MODE`:
