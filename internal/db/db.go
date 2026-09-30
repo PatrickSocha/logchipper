@@ -30,8 +30,14 @@ type Event struct {
 
 func Open(path string) (*DB, error) {
 	// _time_format=sqlite stores times as "2006-01-02 15:04:05.999999999-07:00",
-	// which SQLite's date functions understand.
-	conn, err := sql.Open("sqlite", path+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_time_format=sqlite")
+	// which SQLite's date functions understand. temp_store(memory) keeps sort
+	// spills (e.g. the histogram GROUP BY) in RAM: the container's root
+	// filesystem is read-only, so SQLite has no writable temp directory.
+	dsn := path + "?_pragma=journal_mode(WAL)" +
+		"&_pragma=busy_timeout(5000)" +
+		"&_pragma=temp_store(memory)" +
+		"&_time_format=sqlite"
+	conn, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
@@ -223,10 +229,17 @@ func (d *DB) Histogram(p HistogramParams) ([]Bucket, error) {
 
 	var out []Bucket
 	for rows.Next() {
+		// bucket is NULL for any created_at that strftime can't parse; skip
+		// those rather than failing the whole histogram.
+		var t sql.NullInt64
 		var b Bucket
-		if err := rows.Scan(&b.T, &b.Count); err != nil {
+		if err := rows.Scan(&t, &b.Count); err != nil {
 			return nil, err
 		}
+		if !t.Valid {
+			continue
+		}
+		b.T = t.Int64
 		out = append(out, b)
 	}
 	return out, rows.Err()

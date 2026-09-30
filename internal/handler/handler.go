@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -178,6 +179,7 @@ func (h *Handler) Histogram(w http.ResponseWriter, r *http.Request) {
 		BucketSeconds: bucketSeconds,
 	})
 	if err != nil {
+		log.Printf("histogram: %v", err)
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
 	}

@@ -16,6 +16,7 @@ import (
 	"logchipper/internal/allowlist"
 	"logchipper/internal/db"
 	"logchipper/internal/handler"
+	"logchipper/internal/selflog"
 	internalsyslog "logchipper/internal/syslog"
 )
 
@@ -102,6 +103,11 @@ func main() {
 	defer database.Close()
 
 	broker := handler.NewBroker()
+
+	// From here on, our own log output is also stored as events.
+	log.SetFlags(0)
+	log.SetOutput(selflog.New(os.Stderr, database, broker))
+
 	h := &handler.Handler{
 		DB:               database,
 		Broker:           broker,
