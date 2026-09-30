@@ -17,6 +17,8 @@ import (
 
 const minPasswordLength = 8
 
+const sessionTTL = 90 * 24 * time.Hour
+
 // Auth guards the UI and API with a single account stored in the users table.
 // While the table is empty, the first visitor is asked to create it via /api/setup.
 type Auth struct {
@@ -202,7 +204,7 @@ func (a *Auth) startSession(w http.ResponseWriter) {
 
 	// Store session
 	a.mu.Lock()
-	a.sessions[tokenStr] = time.Now().Add(24 * time.Hour)
+	a.sessions[tokenStr] = time.Now().Add(sessionTTL)
 	a.mu.Unlock()
 
 	// Set cookie
@@ -212,7 +214,7 @@ func (a *Auth) startSession(w http.ResponseWriter) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   86400, // 24 hours
+		MaxAge:   int(sessionTTL.Seconds()),
 	})
 
 	w.Header().Set("Content-Type", "application/json")
