@@ -25,6 +25,9 @@ USER logchipper
 
 ENV PORT=7070
 ENV DB_PATH=/data/logchipper.db
+# The root filesystem may be read-only; give SQLite somewhere to spill
+# large sorts.
+ENV SQLITE_TMPDIR=/data
 ENV RETENTION_DAYS=30
 ENV SYSLOG_ADDR=:5514
 ENV SYSLOG_ENABLE=true

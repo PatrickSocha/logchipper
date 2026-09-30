@@ -30,12 +30,9 @@ type Event struct {
 
 func Open(path string) (*DB, error) {
 	// _time_format=sqlite stores times as "2006-01-02 15:04:05.999999999-07:00",
-	// which SQLite's date functions understand. temp_store(memory) keeps sort
-	// spills (e.g. the histogram GROUP BY) in RAM: the container's root
-	// filesystem is read-only, so SQLite has no writable temp directory.
+	// which SQLite's date functions understand.
 	dsn := path + "?_pragma=journal_mode(WAL)" +
 		"&_pragma=busy_timeout(5000)" +
-		"&_pragma=temp_store(memory)" +
 		"&_time_format=sqlite"
 	conn, err := sql.Open("sqlite", dsn)
 	if err != nil {
@@ -101,16 +98,13 @@ func (d *DB) migrate() error {
 func (d *DB) Insert(e Event) (int64, error) {
 	res, err := d.conn.Exec(
 		`INSERT INTO events (created_at, source, level, message, meta) VALUES (?, ?, ?, ?, ?)`,
-		e.CreatedAt.UTC(), e.Source, e.Level, e.Message, e.Meta,
+		e.CreatedAt.UnixMilli(), e.Source, e.Level, e.Message, e.Meta,
 	)
 	if err != nil {
 		return 0, err
 	}
 	return res.LastInsertId()
 }
-
-// created_at is stored as text and compared as a string, so every time
-// written or compared must be in the same zone: UTC.
 
 type QueryParams struct {
 	Source   string
@@ -143,11 +137,11 @@ func (d *DB) Query(p QueryParams) ([]Event, error) {
 	}
 	if !p.Since.IsZero() {
 		q += ` AND created_at >= ?`
-		args = append(args, p.Since.UTC())
+		args = append(args, p.Since.UnixMilli())
 	}
 	if !p.Until.IsZero() {
 		q += ` AND created_at < ?`
-		args = append(args, p.Until.UTC())
+		args = append(args, p.Until.UnixMilli())
 	}
 	if p.AfterID > 0 {
 		q += ` AND id > ?`
@@ -177,9 +171,11 @@ func (d *DB) Query(p QueryParams) ([]Event, error) {
 	var events []Event
 	for rows.Next() {
 		var e Event
-		if err := rows.Scan(&e.ID, &e.CreatedAt, &e.Source, &e.Level, &e.Message, &e.Meta); err != nil {
+		var ms int64
+		if err := rows.Scan(&e.ID, &ms, &e.Source, &e.Level, &e.Message, &e.Meta); err != nil {
 			return nil, err
 		}
+		e.CreatedAt = time.UnixMilli(ms).UTC()
 		events = append(events, e)
 	}
 	return events, rows.Err()
@@ -202,9 +198,9 @@ type HistogramParams struct {
 // GROUP BY runs inside SQLite, so memory use stays O(bucket count) — a few
 // hundred rows at most — no matter how many raw events fall in the range.
 func (d *DB) Histogram(p HistogramParams) ([]Bucket, error) {
-	q := `SELECT (CAST(strftime('%s', created_at) AS INTEGER) / ?) * ? AS bucket, COUNT(*) AS cnt
-	      FROM events WHERE created_at >= ?`
-	args := []any{p.BucketSeconds, p.BucketSeconds, p.Since.UTC()}
+	bucketMs := int64(p.BucketSeconds) * 1000
+	q := `SELECT created_at / ? * ? FROM events WHERE created_at >= ?`
+	args := []any{bucketMs, bucketMs, p.Since.UnixMilli()}
 
 	if p.Source != "" {
 		q += ` AND source = ?`
@@ -219,7 +215,6 @@ func (d *DB) Histogram(p HistogramParams) ([]Bucket, error) {
 		s := "%" + p.Search + "%"
 		args = append(args, s, s, s)
 	}
-	q += ` GROUP BY bucket ORDER BY bucket`
 
 	rows, err := d.conn.Query(q, args...)
 	if err != nil {
@@ -227,22 +222,27 @@ func (d *DB) Histogram(p HistogramParams) ([]Bucket, error) {
 	}
 	defer rows.Close()
 
-	var out []Bucket
+	// Count in Go rather than with GROUP BY: SQLite would sort one key per
+	// matching row (spilling to a temp file on big ranges), while the map
+	// stays at one entry per bucket.
+	counts := map[int64]int64{}
 	for rows.Next() {
-		// bucket is NULL for any created_at that strftime can't parse; skip
-		// those rather than failing the whole histogram.
-		var t sql.NullInt64
-		var b Bucket
-		if err := rows.Scan(&t, &b.Count); err != nil {
+		var ms int64
+		if err := rows.Scan(&ms); err != nil {
 			return nil, err
 		}
-		if !t.Valid {
-			continue
-		}
-		b.T = t.Int64
-		out = append(out, b)
+		counts[ms/1000]++
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	out := make([]Bucket, 0, len(counts))
+	for t, n := range counts {
+		out = append(out, Bucket{T: t, Count: n})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].T < out[j].T })
+	return out, nil
 }
 
 func (d *DB) Sources() ([]string, error) {
@@ -262,7 +262,7 @@ func (d *DB) Sources() ([]string, error) {
 
 func (d *DB) Purge(olderThan time.Duration) (int64, error) {
 	cutoff := time.Now().Add(-olderThan)
-	res, err := d.conn.Exec(`DELETE FROM events WHERE created_at < ?`, cutoff.UTC())
+	res, err := d.conn.Exec(`DELETE FROM events WHERE created_at < ?`, cutoff.UnixMilli())
 	if err != nil {
 		return 0, err
 	}
